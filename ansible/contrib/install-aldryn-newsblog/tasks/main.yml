@@ -1,0 +1,35 @@
+---
+# http://aldryn-newsblog.readthedocs.io/en/latest/introduction.html#manual-installation
+
+- name: Install_aldryn_newsblog_package | {{ role_name | basename }}
+  tags: Install_aldryn_newsblog_package
+  when: inventory_hostname in groups['webserver']
+  include_role:
+    name: ../../roles/helpers/pip-install
+  vars:
+    venv_name: "{{ deployment_env }}_{{ project }}"
+    venv_packages: "aldryn-newsblog"
+
+- name: Settings_file_aldryn_newsblog | {{ role_name | basename }}
+  tags: Settings_file_aldryn_newsblog
+  when: inventory_hostname == groups['webserver'][0]
+  blockinfile:
+    path: "{{ project_dir }}/{{ project }}/settings.py"
+    block: |
+      INSTALLED_APPS += (
+        'aldryn_apphooks_config',
+        'aldryn_categories',
+        'aldryn_common',
+        'aldryn_newsblog',
+        'aldryn_people',
+        'aldryn_translation_tools',
+        'parler',
+        'sortedm2m',
+        'taggit',
+        'aldryn_boilerplates',
+      )
+      ALDRYN_BOILERPLATE_NAME = 'bootstrap3'
+    marker: "# {mark} aldryn-newsblog CONFIG MANAGED BY ANSIBLE ROLE {{ role_name | basename }}"
+  notify:
+    - Restart_uwsgi | common-handlers
+    - Django_migrate | common-handlers

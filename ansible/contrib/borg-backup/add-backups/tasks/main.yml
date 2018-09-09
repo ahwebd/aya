@@ -1,0 +1,52 @@
+---
+- when: inventory_hostname == item.backup_client
+  block:
+  - name: Initialize_repos | {{ role_name | basename }}
+    tags: Initialize_repos
+    loop: "{{ backups }}"
+    command: "borg init {{item.repo_init_options}} {{item.backup_server_user}}@{{item.backup_server}}:{{item.repo}}"
+    environment:
+      - BORG_RSH: "ssh -o StrictHostKeyChecking=no"
+      - BORG_PASSPHRASE: "{{ item.repo_passphrase }}"
+    ignore_errors: true
+
+  - name: Create_backup_scripts | {{ role_name | basename }}
+    tags: Create_backup_scripts
+    template:
+      src: templates/backup-script.sh.j2
+      dest: "{{ ansible_user_dir }}/.aya/borg/{{ item.name }}_backup.sh"
+      mode: 0700
+    loop: "{{ backups }}"
+
+  - name: Create_cron_jobs_for_backups | {{ role_name | basename }}
+    tags: Create_cron_jobs_for_backups
+    become: true
+    cron:
+      name: "Borg_backup_{{ item.name }}"
+      job: "bash {{ ansible_user_dir }}/.aya/borg/{{ item.name }}_backup.sh"
+      hour: "{{ item.backup_hour | default( 6 | random ) }}"
+      minute: "{{ item.backup_minute | default( 59 |random ) }}"
+      day: "{{ item.backup_day | default('*') }}"
+      weekday: "{{ item.backup_weekday | default('*') }}"
+      month: "{{ item.backup_month | default('*') }}"
+    loop: "{{ backups }}"
+
+  - name: Create_prune_scripts | {{ role_name | basename }}
+    tags: Create_prune_scripts
+    template:
+      src: templates/prune-script.sh.j2
+      dest: "{{ ansible_user_dir }}/.aya/borg/{{ item.name }}_prune.sh"
+      mode: 0700
+    loop: "{{ backups }}"
+
+  - name: Create_cron_jobs_for_prune | {{ role_name | basename }}
+    tags: Create_cron_jobs_for_prune
+    cron:
+      name: "Borg_prune_{{ item.name }}"
+      job: "bash {{ ansible_user_dir }}/.aya/borg/{{ item.name }}_prune.sh"
+      hour: "{{ item.prune_hour | default( 6 | random ) }}"
+      minute: "{{ item.prune_minute | default( 59 |random ) }}"
+      day: "{{ item.prune_day | default('*') }}"
+      weekday: "{{ item.prune_weekday | default('*') }}"
+      month: "{{ item.prune_month | default('*') }}"
+    loop: "{{ backups }}"

@@ -1,0 +1,66 @@
+version: "3.7"
+
+volumes:
+  pgdata:
+networks:
+  web:
+    attachable: true
+secrets:
+  postgres_pass:
+    external: true
+
+services:
+  postgres:
+    image: {{ docker_images['postgres'] }}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - web
+    secrets:
+      - source: postgres_pass
+        uid: '70'
+        gid: '70'
+        mode: 0400
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_pass
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.dbserver == true
+
+  nginx:
+    image: {{ docker_images['nginx'] }}
+    volumes:
+      - {{ apps_dir }}:{{ apps_dir }}
+      - {{ apps_dir }}/etc/nginx/conf.d:/etc/nginx/conf.d
+      - {{ sockets_dir }}:{{ sockets_dir }}
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - web
+    deploy:
+      replicas: {{ ( groups['webserver'] | length ) * 1 }}
+      placement:
+        constraints:
+          - node.labels.webserver == true
+
+  uwsgi:
+    image: {{ docker_images['uwsgi'] }}
+    user: {{ ansible_user_uid }}:101
+    volumes:
+      - {{ apps_dir }}:{{ apps_dir }}
+      - {{ apps_dir }}/etc/uwsgi/vassals:/etc/uwsgi/vassals
+      - {{ sockets_dir }}:{{ sockets_dir }}
+      - {{ python_venvs_dir }}:{{ python_venvs_dir }}
+    networks:
+      - web
+    deploy:
+      replicas: {{ ( groups['webserver'] | length ) * 1 }}
+      placement:
+        constraints:
+          - node.labels.webserver == true
+    command: bash -c "
+      source {{ python_venvs_dir }}/uwsgi/bin/activate &&
+      uwsgi --emperor /etc/uwsgi/vassals"

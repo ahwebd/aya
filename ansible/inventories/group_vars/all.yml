@@ -1,0 +1,48 @@
+---
+
+# Update os packages when setting up machines? (apt-get dist-upgrade)
+update_operating_system_packages: true
+
+# Install vagrant in local machine? vagrant allows you to try project aya in
+# virtual machines inside your local computer.
+install_vagrant_in_local_machine: true
+
+# Software versions:
+
+# https://github.com/docker/docker-ce/releases/latest
+# https://download.docker.com/linux/ubuntu/dists/bionic/pool/stable/amd64/
+docker_package_url: "https://download.docker.com/linux/ubuntu/dists/bionic/pool/stable/amd64/docker-ce_18.06.1~ce~3-0~ubuntu_amd64.deb"
+
+# https://docs.gluster.org/en/v3/release-notes/
+# https://launchpad.net/~gluster
+# https://github.com/gluster/glusterfs/releases
+glusterfs_version: "4.1"
+
+# https://www.vagrantup.com/downloads.html
+vagrant_package_url: "https://releases.hashicorp.com/vagrant/2.1.4/vagrant_2.1.4_x86_64.deb"
+
+# docker images
+docker_images:
+  postgres: "ahwebd/postgres"
+  nginx: "ahwebd/nginx"
+  uwsgi: "ahwebd/python"
+
+# web apps directory, absolute path without trailing slash
+apps_dir: "/apps"
+# directory to hold python virtual environments
+python_venvs_dir: "/opt/pyvenvs"
+# location of python to use for ansible
+ansible_python_interpreter: "/opt/pyvenvs/ansible/bin/python"
+# directory to hold needed unix sockets
+sockets_dir: "/opt/sockets"
+
+# iptables configuration template file
+iptables_conf_template: "templates/iptables.conf.j2"
+
+# Network interface used to connect to other hosts in the cluster.
+# Don't override here, instead use the corresponding group_vars/host_vars files.
+# This is used to initialize docker swarm in the correct network when multiple
+# networks exist. Also used to allow traffic in this network between nodes when
+# configuring iptables.
+# Defaulted to loopback interface (single node case).
+cluster_network_interface: lo

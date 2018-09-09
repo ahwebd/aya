@@ -1,0 +1,23 @@
+from .settingsgeneral import *
+
+with open('/run/secrets/{{ deployment_env }}_{{ project }}_secret_key') as f:
+  SECRET_KEY = f.read().strip()
+with open('/run/secrets/{{ deployment_env }}_{{ project }}_db_user_password') as f:
+  DATABASES['default']['PASSWORD'] = f.read().strip()
+
+# {{ deployment_env }} environment overrides
+#https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
+
+DEBUG = False
+ALLOWED_HOSTS = ['{{ domain }}']
+
+MIDDLEWARE = ('django.middleware.security.SecurityMiddleware',) + MIDDLEWARE
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_SSL_REDIRECT = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+X_FRAME_OPTIONS = 'DENY'

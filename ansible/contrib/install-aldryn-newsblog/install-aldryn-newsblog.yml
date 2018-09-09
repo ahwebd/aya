@@ -1,0 +1,15 @@
+---
+#ansible-playbook -i inventories/localhost.ini contrib/install-aldryn-newsblog/install-aldryn-newsblog.yml
+#ansible-playbook -i inventories/sandbox.ini contrib/install-aldryn-newsblog/install-aldryn-newsblog.yml
+
+- name: Install_aldryn_newsblog
+  hosts: all
+  vars:
+    project_dir: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}"
+  tasks:
+  - include_vars: install-aldryn-newsblog-variables.yml
+  - include_role:
+      name: ../../roles/helpers/common-handlers
+
+  - include_role:
+      name: ../install-aldryn-newsblog

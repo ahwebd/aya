@@ -1,0 +1,22 @@
+upstream {{ deployment_env }}_{{ project }} {
+  server unix://{{ sockets_dir }}/{{ deployment_env }}_{{ project }}.sock;
+}
+
+server {
+  listen 80;
+  listen [::]:80;
+  server_name {{ deployment_env }}.{{ project }} ip6-{{ deployment_env }}.{{ project }};
+
+  location /media  {
+    alias {{ project_dir }}/media;
+  }
+
+  location /static {
+    alias {{ project_dir }}/static;
+  }
+
+  location / {
+    uwsgi_pass {{ deployment_env }}_{{ project }};
+    include {{ apps_dir }}/etc/nginx/uwsgi_params;
+  }
+}

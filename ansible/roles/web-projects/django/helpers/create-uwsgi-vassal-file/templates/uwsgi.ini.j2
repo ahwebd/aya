@@ -1,0 +1,21 @@
+[uwsgi]
+
+{# Django-related settings #}
+{# the base directory (full path) #}
+chdir = {{ project_dir }}
+{# Django's wsgi file #}
+module = {{ project }}.wsgi:application
+{# the virtualenv (full path) #}
+home = {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}
+
+{# process-related settings #}
+{# master #}
+master = true
+{# maximum number of worker processes #}
+processes = 10
+
+socket = {{ sockets_dir }}/{{ deployment_env }}_{{ project }}.sock
+chmod-socket = 660
+
+{# clear environment on exit #}
+vacuum = true

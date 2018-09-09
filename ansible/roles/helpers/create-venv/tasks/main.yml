@@ -1,0 +1,18 @@
+---
+- name: Create_virtual_env | {{ role_name | basename }}
+  tags: Create_virtual_env
+  when: inventory_hostname in groups['webserver']
+  docker_container:
+    name: create_venv
+    detach: false
+    cleanup: true
+    image: "{{ docker_images['uwsgi'] }}"
+    pull: true
+    user: "{{ ansible_user_uid }}:{{ ansible_user_gid }}"
+    volumes:
+      - "{{ python_venvs_dir }}:{{ python_venvs_dir }}"
+    command: bash -c "
+      python -m venv --copies {{ python_venvs_dir }}/{{ venv_name }} &&
+      source {{ python_venvs_dir }}/{{ venv_name }}/bin/activate &&
+      pip install --cache-dir {{ python_venvs_dir }}/pipcache --upgrade pip &&
+      pip install --cache-dir {{ python_venvs_dir }}/pipcache {{ venv_packages }}"

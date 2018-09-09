@@ -1,0 +1,54 @@
+---
+- tags: Add_records_of_remote_in_local_machine_known_hosts
+  delegate_to: localhost
+  block:
+  - name: Get_remote_host_entry | {{ role_name | basename }}
+    tags: Get_remote_host_entry
+    command: getent hosts {{ hostvars[inventory_hostname]['ansible_host'] | default(inventory_hostname) }}
+    register: remote_host_entry
+
+  - name: Add_remote_name_to_local_machine_known_hosts | {{ role_name | basename }}
+    tags: Add_remote_name_to_local_machine_known_hosts
+    known_hosts:
+      name: "{{ hostvars[inventory_hostname]['ansible_host'] | default(inventory_hostname) }}"
+      key: "{{ lookup('pipe', 'ssh-keyscan -p {{ ansible_port | default(22) }} -T 20 -H -t rsa {{ hostvars[inventory_hostname].ansible_host | default(inventory_hostname) }}') }}"
+
+  - name: Add_remote_ip_to_local_machine_known_hosts | {{ role_name | basename }}
+    tags: Add_remote_ip_to_local_machine_known_hosts
+    known_hosts:
+      name: "{{ remote_host_entry.stdout.split(' ')[0] }}"
+      key: "{{ lookup('pipe', 'ssh-keyscan -p {{ ansible_port | default(22) }} -T 20 -H -t rsa {{ remote_host_entry.stdout.split(' ')[0] }}') }}"
+
+- tags: Install_python2_and_gather_facts
+  block:
+    # python2 needed to run ansible as python3 might still have limited support
+    # in community modules.
+  - name: Install_python2_if_not_installed | {{ role_name | basename }}
+    tags: Install_python2_if_not_installed
+    become: true
+    raw: bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qqy python-minimal)"
+    register: output
+    changed_when: output.stdout != ""
+
+  - name: Gather_facts | {{ role_name | basename }}
+    tags: Gather_facts
+    setup:
+
+- name: Copy_ssh_public_key_to_remote | {{ role_name | basename }}
+  tags: Copy_ssh_public_key_to_remote
+  authorized_key:
+    user: "{{ ansible_user_id }}"
+    key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/id_rsa.pub') }}"
+    state: present
+  register: ssh_pub_key_added
+
+- name: Disable_ssh_password_login_for_better_security | {{ role_name | basename }}
+  tags: Disable_ssh_password_login_for_better_security
+  when: ssh_pub_key_added is succeeded
+  become: true
+  replace:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PasswordAuthentication yes'
+    replace: 'PasswordAuthentication no'
+    backup: true
+  notify: Restart_ssh | remote-connection

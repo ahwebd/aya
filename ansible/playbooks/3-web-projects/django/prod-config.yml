@@ -1,0 +1,17 @@
+---
+#ansible-playbook -i inventories/my_prod.ini playbooks/3-web-projects/django/prod-config.yml
+
+- name: Configure_project_for_production
+  hosts: all
+  vars:
+    project_dir: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}"
+
+  tasks:
+  - include_vars: prod-config-variables.yml
+
+  - include_role:
+      name: ../../../../roles/helpers/common-handlers
+
+  - tags: Configure_project_for_production
+    include_role:
+      name: ../../../../roles/web-projects/django/prod-config

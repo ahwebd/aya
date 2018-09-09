@@ -1,0 +1,43 @@
+---
+- when: inventory_hostname == groups['webserver'][0]
+  block:
+  - name: Read_settings_file | {{ role_name | basename }}
+    tags: Read_settings_file
+    slurp:
+      src: "{{ project_dir }}/{{ project }}/settings.py"
+    register: original_settings
+
+  - name: Create_general_settings_file | {{ role_name | basename }}
+    tags: Create_general_settings_file
+    copy:
+      src: "{{ project_dir }}/{{ project }}/settings.py"
+      dest: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+      remote_src: yes
+      force: false
+
+  - name: Remove_sensitive_info_from_general_settings_file | {{ role_name | basename }}
+    tags: Remove_sensitive_info_from_general_settings_file
+    lineinfile:
+      path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+      regexp: "^\\s*{{ item }}"
+      state: absent
+    with_items:
+      - "SECRET_KEY = "
+      - "'PASSWORD': "
+
+  - name: Create_environment_specific_settings_file | {{ role_name | basename }}
+    tags: Create_environment_specific_settings_file
+    template:
+      src: "templates/settings{{ deployment_env }}.py.j2"
+      dest: "{{ project_dir }}/{{ project }}/settings.py"
+
+- name: Create_docker_secret_for_project_secret_key | {{ role_name | basename }}
+  tags: Create_docker_secret_for_project_secret_key
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  docker_secret:
+    name: "{{ deployment_env }}_{{ project }}_secret_key"
+    data: "{{ hostvars[groups['webserver'][0]]['original_settings']['content'] | b64decode
+          | regex_search(\"SECRET_KEY = '.+'\")
+          | regex_replace(\"SECRET_KEY = \")
+          | regex_replace(\"'\") }}"
+  ignore_errors: true

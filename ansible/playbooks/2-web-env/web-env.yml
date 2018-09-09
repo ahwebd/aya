@@ -1,0 +1,25 @@
+---
+#ansible-playbook -i inventories/localhost.ini playbooks/2-web-env/web-env.yml --ask-become-pass
+#ansible-playbook -i inventories/sandbox.ini playbooks/2-web-env/web-env.yml
+
+# Note: When using vagrant boxes and to save time and bandwidth consider using
+# the role: "ansible/contrib/copy_docker_images_to_vagrant_boxes" before running
+# this playbook.
+# This will copy needed docker images from the local machine and avoids
+# downloading them again in each box.
+
+- name: Setup_web_environment
+  hosts: all
+
+  tasks:
+  - tags: Setup_apps_directory
+    include_role:
+      name: ../../roles/web-env/apps-dir
+
+  - tags: Setup_docker_swarm
+    include_role:
+      name: ../../roles/web-env/docker-swarm
+
+  - tags: Setup_web_stack
+    include_role:
+      name: ../../roles/web-env/web-stack

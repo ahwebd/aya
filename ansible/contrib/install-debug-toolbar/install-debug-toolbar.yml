@@ -1,0 +1,15 @@
+---
+#ansible-playbook -i inventories/localhost.ini contrib/install-debug-toolbar/install-debug-toolbar.yml
+#ansible-playbook -i inventories/sandbox.ini contrib/install-debug-toolbar/install-debug-toolbar.yml
+
+- name: Install_debug_toolbar
+  hosts: all
+  tasks:
+  - include_vars: install-debug-toolbar-variables.yml
+
+  - include_role:
+      name: ../../roles/helpers/common-handlers
+
+  - tags: Install_debug_toolbar
+    include_role:
+      name: ../install-debug-toolbar

@@ -1,0 +1,16 @@
+---
+#ansible-playbook -i inventories/localhost.ini playbooks/3-web-projects/django/remove-project.yml --ask-become-pass
+#ansible-playbook -i inventories/sandbox.ini playbooks/3-web-projects/django/remove-project.yml --ask-become-pass
+
+# Note: when asked for sudo password provide the local machine password, as it
+# used to have write access to local machine /etc/hosts file.
+
+- name: Remove_project
+  hosts: all
+
+  tasks:
+  - include_vars: remove-project-variables.yml
+
+  - tags: Remove_project
+    include_role:
+      name: ../../../../roles/web-projects/django/remove-project

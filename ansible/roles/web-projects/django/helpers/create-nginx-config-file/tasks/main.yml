@@ -1,0 +1,7 @@
+---
+- name: Create_nginx_config_file | {{ role_name | basename }}
+  tags: Create_nginx_config_file
+  template:
+    src: templates/nginx.conf.j2
+    dest: "{{ apps_dir }}/etc/nginx/conf.d/{{ deployment_env }}_{{ project }}.conf"
+  notify: Restart_nginx | common-handlers

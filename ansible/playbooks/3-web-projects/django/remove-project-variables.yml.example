@@ -1,0 +1,3 @@
+---
+project: djangoexample
+deployment_env: play

@@ -1,0 +1,58 @@
+---
+- when: inventory_hostname in groups['webserver']
+  block:
+  - name: Create_uwsgi_virtual_env | {{ role_name | basename }}
+    tags: Create_uwsgi_virtual_env
+    include_role:
+      name: "{{ role_path }}/../../helpers/create-venv"
+    vars:
+      venv_name: uwsgi
+      venv_packages: uwsgi
+
+  - name: Create_sockets_directory | {{ role_name | basename }}
+    tags: Create_sockets_directory
+    become: true
+    file:
+      path: "{{ sockets_dir }}"
+      state: directory
+      owner: "{{ ansible_user_uid }}"
+      group: "{{ ansible_user_gid }}"
+
+  - when: inventory_hostname == groups['webserver'][0]
+    block:
+    - name: Create_nginx_config_directory | {{ role_name | basename }}
+      tags: Create_nginx_config_directory
+      file:
+        path: "{{ apps_dir }}/etc/nginx/conf.d"
+        state: directory
+
+    - name: Create_uwsgi_vassals_directory | {{ role_name | basename }}
+      tags: Create_uwsgi_vassals_directory
+      file:
+        path: "{{ apps_dir }}/etc/uwsgi/vassals"
+        state: directory
+
+    - name: Copy_uwsgi_params_file | {{ role_name | basename }}
+      tags: Copy_uwsgi_params_file
+      copy:
+        src: files/uwsgi_params
+        dest: "{{ apps_dir }}/etc/nginx/uwsgi_params"
+
+- when: inventory_hostname == groups['docker-swarm-manager'][0]
+  block:
+  - name: Create_postgres_password_secret | {{ role_name | basename }}
+    tags: Create_postgres_password_secret
+    shell: openssl rand -hex $((20 + RANDOM % 10)) | docker secret create postgres_pass -
+    ignore_errors: true
+
+  - name: Create_web_stack_yml_file | {{ role_name | basename }}
+    tags: Create_web_stack_yml_file
+    template:
+      src: templates/web-stack.yml.j2
+      dest: "{{ ansible_user_dir }}/.aya/web-stack.yml"
+
+  - name: Deploy_web_stack | {{ role_name | basename }}
+    tags: Deploy_web_stack
+    command: >
+      docker stack deploy --resolve-image always
+      --compose-file {{ ansible_user_dir }}/.aya/web-stack.yml web-stack

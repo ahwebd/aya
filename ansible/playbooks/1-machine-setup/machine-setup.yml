@@ -1,0 +1,17 @@
+---
+- name: Setup_a_python_virtual_env_for_ansible
+  tags: Setup_a_python_virtual_env_for_ansible
+  hosts: all
+  vars:
+    # Before a python virtualenv is installed for ansible we use the global python
+    ansible_python_interpreter: /usr/bin/python
+  tasks:
+  - include_role:
+      name: ../../roles/machine-setup/ansible-virtualenv
+
+- name: Machine_general_setup
+  tags: Machine_general_setup
+  hosts: all
+  tasks:
+  - include_role:
+      name: ../../roles/machine-setup/general

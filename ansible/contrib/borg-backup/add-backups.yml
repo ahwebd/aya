@@ -1,0 +1,11 @@
+---
+#ansible-playbook -i inventories/backup.ini custom/borg-backup/add-backups.yml --ask-become-pass
+
+- name: Add_backups
+  hosts: backupserver,backupclient
+
+  tasks:
+  - include_vars: add-backups-variables.yml
+  - tags: Add_backups
+    include_role:
+      name: ../../roles/borg-backup/add-backups

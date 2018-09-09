@@ -1,0 +1,6 @@
+---
+project: example
+deployment_env: prod
+domain: example.net
+# email to use when generating tls certificate
+tls_email: email@example.net

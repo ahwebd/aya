@@ -1,0 +1,10 @@
+---
+#ansible-playbook -i inventories/sandbox.ini contrib/copy_docker_images_to_vagrant_boxes/copy_docker_images_to_vagrant_boxes.yml
+
+- name: Copy_docker_images_to_vagrant_boxes
+  hosts: vagrant
+  vars:
+    vagrant_path: "../../../vagrant"
+  tasks:
+  - include_role:
+      name: ../copy_docker_images_to_vagrant_boxes

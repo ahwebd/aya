@@ -1,0 +1,8 @@
+---
+
+# the following variables are not meant to be changed, they are
+# constructed from other variables to facilitate writing tasks.
+
+project_dir: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}"
+db: "{{ deployment_env }}_{{ project }}"
+db_user: "{{ db }}"

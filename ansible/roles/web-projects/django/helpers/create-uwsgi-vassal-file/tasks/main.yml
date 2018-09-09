@@ -1,0 +1,6 @@
+---
+- name: Create_uwsgi_vassal_file | {{ role_name | basename }}
+  tags: Create_uwsgi_vassal_file
+  template:
+    src: templates/uwsgi.ini.j2
+    dest: "{{ apps_dir }}/etc/uwsgi/vassals/{{ deployment_env }}_{{ project }}.ini"

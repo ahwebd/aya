@@ -1,0 +1,53 @@
+---
+- when: inventory_hostname == groups['webserver'][0]
+  block:
+  - name: Create_nginx_http_config_file | {{ role_name | basename }}
+    tags: Create_nginx_http_config_file
+    template:
+      src: templates/nginx_http.conf.j2
+      dest: "{{ apps_dir }}/etc/nginx/conf.d/nginx_http_{{ domain }}.conf"
+    notify: Restart_nginx | common-handlers
+  - meta: flush_handlers
+
+  - name: Generate_letsencrypt_certificate | {{ role_name | basename }}
+    tags: Generate_letsencrypt_certificate
+    docker_container:
+      name: certbot
+      detach: false
+      cleanup: true
+      image: certbot/certbot
+      pull: true
+      volumes:
+        - "{{ apps_dir }}/etc/letsencrypt:/etc/letsencrypt"
+        - "{{ project_dir }}:{{ project_dir }}"
+      command: >
+        certonly --webroot -m {{ tls_email }} --agree-tos
+        -w {{ project_dir }} -d {{ domain }} -d www.{{ domain }}
+
+  - name: Generate_Diffie_Hellman_group_if_not_existing | {{ role_name | basename }}
+    tags: Generate_Diffie_Hellman_group_if_not_existing
+    shell: >
+      test -e {{ apps_dir }}/etc/dhparams.pem ||
+      openssl dhparam -out {{ apps_dir }}/etc/dhparam.pem 2048
+
+  - name: Create_nginx_https_config_file | {{ role_name | basename }}
+    tags: Create_nginx_https_config_file
+    template:
+      src: templates/nginx_https.conf.j2
+      dest: "{{ apps_dir }}/etc/nginx/conf.d/nginx_https_{{ domain }}.conf"
+    notify: Restart_nginx | common-handlers
+
+  - name: Delete_initial_nginx_config_file | {{ role_name | basename }}
+    tags: Delete_initial_nginx_config_file
+    file:
+      path: "{{ apps_dir }}/etc/nginx/conf.d/{{ deployment_env }}_{{ project }}.conf"
+      state: absent
+    notify: Restart_nginx | common-handlers
+
+  - name: tls_certificates_renewal_cron_job | {{ role_name | basename }}
+    tags: tls_certificates_renewal_cron_job
+    cron:
+      name: tls_certificates_renewal_cron_job
+      special_time: weekly
+      job: "docker run -v {{ apps_dir }}/etc/letsencrypt:/etc/letsencrypt
+        -v {{ apps_dir }}:{{ apps_dir }} certbot/certbot renew"

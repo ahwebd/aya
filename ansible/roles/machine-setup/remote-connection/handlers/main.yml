@@ -1,0 +1,7 @@
+---
+- name: Restart_ssh | {{ role_name | basename }}
+  tags: Restart_ssh
+  become: true
+  systemd:
+    name: ssh
+    state: restarted

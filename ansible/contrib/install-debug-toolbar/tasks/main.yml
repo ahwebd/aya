@@ -1,0 +1,51 @@
+---
+- name: Install_django_debug_toolbar_package | {{ role_name | basename }}
+  tags: Install_django_debug_toolbar_package
+  when: inventory_hostname in groups['webserver']
+  include_role:
+    name: ../../roles/helpers/pip-install
+  vars:
+    venv_name: "{{ deployment_env }}_{{ project }}"
+    venv_packages: "django-debug-toolbar"
+
+- name: Get_internal_ip | {{ role_name | basename }}
+  tags: Get_internal_ip
+  when: inventory_hostname in groups['docker-swarm']
+  command: '{% raw %}docker network inspect -f "{{with index .Containers \"ingress-sbox\"}}{{.IPv4Address}}{{end}}" ingress{% endraw %}'
+  register: internal_ip
+  changed_when: false
+
+- when: inventory_hostname == groups['webserver'][0]
+  block:
+  - name: Debug_toolbar_settings_file | {{ role_name | basename }}
+    tags: Debug_toolbar_settings_file
+    blockinfile:
+      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings.py"
+      block: |
+        DEBUG_TOOLBAR = True
+        if DEBUG and DEBUG_TOOLBAR:
+          MIDDLEWARE += ('debug_toolbar.middleware.DebugToolbarMiddleware',)
+          INSTALLED_APPS += ('debug_toolbar',)
+          INTERNAL_IPS = ('{{ groups['docker-swarm'] | map('extract', hostvars, 'internal_ip') | map(attribute='stdout') | map('regex_replace', '/.*') | list | join("', '") }}', )
+      marker: "# {mark} DEBUG_TOOLBAR MANAGED BY ANSIBLE ROLE {{ role_name | basename }}"
+    notify:
+      - Django_collect_static_files | common-handlers
+      - Restart_uwsgi | common-handlers
+
+  - name: Debug_toolbar_urls_file | {{ role_name | basename }}
+    tags: Debug_toolbar_urls_file
+    blockinfile:
+      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/urls.py"
+      block: |
+        from django.conf import settings
+        from django.conf.urls import include
+
+        if settings.DEBUG and settings.DEBUG_TOOLBAR:
+          import debug_toolbar
+          urlpatterns = [
+            url(r'^__debug__/', include(debug_toolbar.urls)),
+          ] + urlpatterns
+      marker: "# {mark} DEBUG_TOOLBAR MANAGED BY ANSIBLE ROLE {{ role_name | basename }}"
+    notify:
+      - Django_collect_static_files | common-handlers
+      - Restart_uwsgi | common-handlers

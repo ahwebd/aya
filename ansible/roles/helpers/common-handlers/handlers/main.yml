@@ -1,0 +1,34 @@
+---
+- name: Restart_nginx | {{ role_name | basename }}
+  tags: Restart_nginx
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  command: docker service update --force web-stack_nginx
+
+- name: Restart_uwsgi | {{ role_name | basename }}
+  tags: Restart_uwsgi
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  command: docker service update --force web-stack_uwsgi
+
+- name: Django_migrate | {{ role_name | basename }}
+  tags: Django_migrate
+  vars:
+    python_manage_command: "migrate"
+  include_tasks: "{{ role_path }}/handlers/django-python-manage-command.yml"
+
+- name: Django_collect_static_files | {{ role_name | basename }}
+  tags: Django_collect_static_files
+  vars:
+    python_manage_command: "collectstatic --noinput -v 0"
+  include_tasks: "{{ role_path }}/handlers/django-python-manage-command.yml"
+
+- name: Django_create_superuser | {{ role_name | basename }}
+  tags: Django_create_superuser
+  vars:
+    admin_username: "admin"
+    admin_password: "admin"
+  shell: >
+    docker exec
+    $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
+      source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
+      echo \"from django.contrib.auth.models import User; User.objects.create_superuser('{{ admin_username }}', 'admin@example.com', '{{ admin_password }}')\" |
+      python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py shell"

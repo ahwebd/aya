@@ -1,0 +1,8 @@
+---
+
+# the following variables are not meant to be changed, they are
+# constructed from other variables to facilitate writing tasks.
+
+swarm_host: "{{ groups['docker-swarm-manager'][0] }}"
+swarm_host_network_interface: "{{ hostvars[swarm_host].cluster_network_interface }}"
+swarm_host_ip: "{{ hostvars[swarm_host]['ansible_' + swarm_host_network_interface].ipv4.address }}"

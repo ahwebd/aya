@@ -1,0 +1,20 @@
+---
+
+# the following variables are not meant to be changed, they are
+# constructed from other variables to facilitate writing tasks.
+
+project_dir: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}"
+db: "{{ deployment_env }}_{{ project }}"
+db_user: "{{ db }}"
+
+djangocms_install_command: "djangocms
+    --db postgres://{{ db_user }}:\"{{ hostvars[groups['dbserver'][0]]['db_user_password']['stdout'] }}\"@web-stack_postgres:5432/{{ db }}
+    --timezone {{ timezone }}
+    --permissions {{ permissions }}
+    --languages {{ languages }}
+    --bootstrap {{ bootstrap }}
+    --starting-page {{ starting_page }}
+    --django-version {{ django_version }}
+    --cms-version {{ cms_version }}
+    --pip-options '--cache-dir /opt/pyvenvs/pipcache'
+    -p {{ project_dir }} {{ project }}"

@@ -1,0 +1,47 @@
+---
+- tags: Initialaze_docker_swarm_and_get_tokens
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  block:
+  - name: Initialaze_swarm_on_primary_manager | {{ role_name | basename }}
+    tags: Initialaze_swarm_on_primary_manager
+    command: docker swarm init --advertise-addr {{ cluster_network_interface }}
+    ignore_errors: true
+
+  - name: Get_manager_join_token | {{ role_name | basename }}
+    tags: Get_manager_join_token
+    command: docker swarm join-token -q manager
+    register: docker_swarm_manager_token
+
+  - name: Get_worker_join_token | {{ role_name | basename }}
+    tags: Get_worker_join_token
+    command: docker swarm join-token -q worker
+    register: docker_swarm_worker_token
+
+- name: Add_managers_to_swarm | {{ role_name | basename }}
+  tags: Add_managers_to_swarm
+  when:
+    - inventory_hostname in groups['docker-swarm-manager']
+    - inventory_hostname != groups['docker-swarm-manager'][0]
+  command: >
+    docker swarm join
+    --token {{ hostvars[groups['docker-swarm-manager'][0]]['docker_swarm_manager_token'].stdout }}
+    {{ swarm_host_ip }}:2377
+  ignore_errors: true
+
+- name: Add_workers_to_swarm | {{ role_name | basename }}
+  tags: Add_workers_to_swarm
+  when: inventory_hostname in groups['docker-swarm-worker']
+  command: >
+    docker swarm join
+    --token {{ hostvars[groups['docker-swarm-manager'][0]]['docker_swarm_worker_token'].stdout }}
+    {{ swarm_host_ip }}:2377
+  ignore_errors: true
+
+- name: Add_relevant_ansible_inventory_groups_as_labels_to_swarm_node | {{ role_name | basename }}
+  tags: Add_relevant_ansible_inventory_groups_as_labels_to_swarm_node
+  delegate_to: "{{ groups['docker-swarm-manager'][0] }}"
+  with_items: "{{ group_names }}"
+  when:
+    - inventory_hostname in groups[ item ]
+    - inventory_hostname in groups['docker-swarm']
+  command: docker node update --label-add {{ item }}=true {{ hostvars[inventory_hostname]['ansible_hostname'] }}

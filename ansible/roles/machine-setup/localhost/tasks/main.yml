@@ -1,0 +1,65 @@
+---
+- tags: Generate_ssh_key_pair
+  block:
+  - name: Generate_ssh_key_pair_if_not_existing | {{ role_name | basename }}
+    tags: Generate_ssh_key_pair_if_not_existing
+    user:
+      name: "{{ ansible_user_id }}"
+      generate_ssh_key: true
+
+  - name: Add_generated_private_key_to_ssh_agent | {{ role_name | basename }}
+    tags: Add_generated_private_key_to_ssh_agent
+    command: ssh-add
+    changed_when: false
+
+- name: Update_local_machine_hosts_file_from_provided_file | {{ role_name | basename }}
+  tags: Update_local_machine_hosts_file_from_provided_file
+  become: true
+  with_first_found:
+  - files: "{{ playbook_dir }}/local-machine-hosts"
+    skip: true
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      {{ lookup('file', '{{ item }}') }}
+    marker: "# {mark} HOSTS MANAGED BY ANSIBLE ROLE {{ role_name | basename }}"
+
+- tags: Install_vagrant
+  when: install_vagrant_in_local_machine == true
+  block:
+  - name: Check_if_vagrant_is_installed | {{ role_name | basename }}
+    tags: Check_if_vagrant_is_installed
+    command: vagrant --version
+    register: vagrant_installed_check
+    ignore_errors: yes
+    changed_when: false
+
+  - when: vagrant_installed_check is failed
+    become: true
+    block:
+    # https://www.virtualbox.org/wiki/Linux_Downloads
+    - name: Add_oracle_vbox_key | {{ role_name | basename }}
+      tags: Add_oracle_vbox_key
+      apt_key:
+        url: "https://www.virtualbox.org/download/oracle_vbox_2016.asc"
+        state: present
+
+    - name: Add_virtualbox_repo | {{ role_name | basename }}
+      tags: Add_virtualbox_repo
+      apt_repository:
+        repo: "deb https://download.virtualbox.org/virtualbox/debian bionic contrib"
+        state: present
+
+    - name: Install_virtualbox_from_repo | {{ role_name | basename }}
+      tags: Install_virtualbox_from_repo
+      apt:
+        name: virtualbox-5.2
+        update_cache: true
+        state: present
+
+    # https://www.vagrantup.com/intro/getting-started/install.html
+    - name: Install_vagrant_from_deb | {{ role_name | basename }}
+      tags: Install_vagrant_from_deb
+      apt:
+        deb: "{{ vagrant_package_url }}"
+        update_cache: false

@@ -1,0 +1,9 @@
+---
+- name: Python_manage_command | {{ role_name | basename }}
+  tags: Python_manage_command
+  when: inventory_hostname == groups['webserver'][0]
+  shell: >
+    docker exec
+    $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
+      source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
+      python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py {{ python_manage_command }}"

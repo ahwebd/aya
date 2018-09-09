@@ -1,0 +1,23 @@
+---
+- name: Create_custom_firewall_rules_file | {{ role_name | basename }}
+  tags: Create_custom_firewall_rules_file
+  template:
+    src: "{{ iptables_conf_template }}"
+    dest: "{{ ansible_user_dir }}/.aya/iptables.conf"
+    mode: 0600
+
+- become: true
+  block:
+  - name: Install_iptables_persistent | {{ role_name | basename }}
+    tags: Install_iptables_persistent
+    apt:
+      name: iptables-persistent
+      state: present
+
+  - name: Activate_custom_firewall_rules_for_ipv4 | {{ role_name | basename }}
+    tags: Activate_custom_firewall_rules_for_ipv4
+    command: iptables-restore --noflush {{ ansible_user_dir }}/.aya/iptables.conf
+
+  - name: Make_firewall_rules_for_ipv4_persistent_after_reboot | {{ role_name | basename }}
+    tags: Make_firewall_rules_for_ipv4_persistent_after_reboot
+    shell: "iptables-save  | tee /etc/iptables/rules.v4"

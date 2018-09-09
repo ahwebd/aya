@@ -1,0 +1,19 @@
+---
+- become: true
+  ignore_errors: true
+  block:
+  - name: Add_ipv4_site_entry_to_local_machine_hosts_file | {{ role_name | basename }}
+    tags: Add_ipv4_site_entry_to_local_machine_hosts_file
+    local_action:
+      module: lineinfile
+      path: /etc/hosts
+      line: "{{ project_access_ip }} {{ deployment_env }}.{{ project }}"
+
+  - name: Add_ipv6_site_entry_to_local_machine_hosts_file | {{ role_name | basename }}
+    tags: Add_ipv6_site_entry_to_local_machine_hosts_file
+    when:
+      - project_access_ip6 != ""
+    local_action:
+      module: lineinfile
+      path: /etc/hosts
+      line: "{{ project_access_ip6 }} ip6-{{ deployment_env }}.{{ project }}"

@@ -1,0 +1,65 @@
+---
+#https://borgbackup.readthedocs.io/en/stable/installation.html#standalone-binary
+- name: Download_borg | {{ role_name | basename }}
+  tags: Download_borg
+  become: true
+  get_url:
+    url: https://github.com/borgbackup/borg/releases/download/{{ borg_version }}/borg-linux64
+    dest: /usr/local/bin/borg
+    owner: root
+    group: root
+    mode: 0755
+
+- name: Create_borg_scripts_directory | {{ role_name | basename }}
+  tags: Create_borg_scripts_directory
+  file:
+    path: "{{ ansible_user_dir }}/.aya/borg"
+    state: directory
+
+- tags: Setup_backup_servers
+  when: inventory_hostname in groups['backupserver']
+  become: true
+  block:
+  - group: name="{{ backup_server_group }}" state=present
+  - user: name="{{ backup_server_user }}" shell=/bin/bash home="{{ home }}" createhome=yes group="{{ backup_server_group }}" groups= state=present
+  - file: path="{{ home }}" owner="{{ backup_server_user }}" group="{{ backup_server_group }}" mode=0700 state=directory
+  - file: path="{{ home }}/.ssh" owner="{{ backup_server_user }}" group="{{ backup_server_group }}" mode=0700 state=directory
+  - file: path="{{ pool }}" owner="{{ backup_server_user }}" group="{{ backup_server_group }}" mode=0700 state=directory
+  - file: path="{{ home }}/.ssh/authorized_keys" owner="{{ backup_server_user }}" group="{{ backup_server_group }}" mode=0600 state=touch
+
+- tags: Setup_backup_clients
+  when: inventory_hostname in groups['backupclient']
+  block:
+  - name: Generate_ssh_key_pair_if_not_existing | {{ role_name | basename }}
+    tags: Generate_ssh_key_pair_if_not_existing
+    user:
+      name: "{{ ansible_user_id }}"
+      generate_ssh_key: true
+
+  - name: Read_ssh_public_key | {{ role_name | basename }}
+    tags: Read_ssh_public_key
+    slurp:
+      src: "{{ ansible_user_dir }}/.ssh/id_rsa.pub"
+    register: ssh_public_key
+
+- tags: Setup_backup_clients_in_backup_servers
+  when: inventory_hostname in groups['backupserver']
+  become: true
+  block:
+  - name: Copy_ssh_public_keys_to_backup_servers | {{ role_name | basename }}
+    tags: Copy_ssh_public_keys_to_backup_servers
+    with_inventory_hostnames: backupclient
+    authorized_key:
+      user: "{{ backup_server_user }}"
+      key: "{{ hostvars[ item ]['ssh_public_key']['content'] | b64decode }}"
+      key_options: 'command="cd {{ pool }}/{{ item }};borg serve --restrict-to-path {{ pool }}/{{ item }}",restrict'
+
+  - name: Create_backup_client_pool_directories | {{ role_name | basename }}
+    tags: Create_backup_client_pool_directories
+    with_inventory_hostnames: backupclient
+    file:
+      path: "{{ pool }}/{{ item }}"
+      owner: "{{ backup_server_user }}"
+      group: "{{ backup_server_group }}"
+      mode: 0700
+      state: directory

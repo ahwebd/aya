@@ -1,0 +1,13 @@
+---
+#ansible-playbook -i inventories/localhost.ini playbooks/1-machine-setup/1-local-machine-setup.yml --ask-become-pass
+
+# make sure you update the file "local-machine-hosts"
+
+- import_playbook: machine-setup.yml
+
+- name: Local_machine_specific_setup
+  tags: Local_machine_specific_setup
+  hosts: localhost
+  tasks:
+  - include_role:
+      name: ../../roles/machine-setup/localhost

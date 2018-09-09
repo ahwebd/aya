@@ -1,0 +1,74 @@
+---
+- tags: Add_site_entry_to_local_machine_hosts_file | add-djangocms-project
+  run_once: true
+  include_role:
+    name: "{{ role_path }}/../../../helpers/add-project-entry-to-hosts-file"
+
+- tags: Setup_project_database | add-djangocms-project
+  when: inventory_hostname == groups['dbserver'][0]
+  include_role:
+    name: "{{ role_path }}/../../../helpers/setup-project-database"
+
+- name: Create_docker_secret_for_project_db_user_password | {{ role_name | basename }}
+  tags: Create_docker_secret_for_project_db_user_password
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  docker_secret:
+    name: "{{ deployment_env }}_{{ project }}_db_user_password"
+    data: "{{ hostvars[groups['dbserver'][0]]['db_user_password']['stdout'] }}"
+
+- name: Create_project_virtual_environment | {{ role_name | basename }}
+  tags: Create_project_virtual_environment
+  when: inventory_hostname in groups['webserver']
+  include_role:
+    name: "{{ role_path }}/../../../helpers/create-venv"
+  vars:
+    venv_name: "{{ deployment_env }}_{{ project }}"
+    venv_packages: "djangocms-installer {{ extra_python_packages }}"
+
+- tags: apps_directory_operations
+  when: inventory_hostname == groups['webserver'][0]
+  block:
+  - name: Install_djangocms_project | {{ role_name | basename }}
+    tags: Install_djangocms_project
+    shell: >
+      docker exec
+      $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
+        source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
+        {{ djangocms_install_command }} &&
+        pip install --cache-dir {{ python_venvs_dir }}/pipcache --upgrade pip &&
+        pip uninstall -y --cache-dir {{ python_venvs_dir }}/pipcache psycopg2 &&
+        pip install --cache-dir {{ python_venvs_dir }}/pipcache psycopg2-binary &&
+        pip freeze > {{ project_dir }}/venv_requirements.txt &&
+        python {{ project_dir }}/manage.py collectstatic --noinput -v 0"
+
+  - name: Project_settings | {{ role_name | basename }}
+    tags: Project_settings
+    include_role:
+      name: "{{ role_path }}/../helpers/settings-management"
+
+  - tags: Create_uwsgi_vassal_file | add-djangocms-project
+    include_role:
+      name: "{{ role_path }}/../helpers/create-uwsgi-vassal-file"
+
+  - tags: Create_nginx_config_file | add-djangocms-project
+    include_role:
+      name: "{{ role_path }}/../helpers/create-nginx-config-file"
+
+- name: Synchronize_project_virtual_environment | {{ role_name | basename }}
+  tags: Synchronize_project_virtual_environment
+  when:
+   - inventory_hostname in groups['webserver']
+   - inventory_hostname != groups['webserver'][0]
+  include_role:
+    name: "{{ role_path }}/../../../helpers/pip-install"
+  vars:
+    venv_name: "{{ deployment_env }}_{{ project }}"
+    venv_packages: "--requirement {{ project_dir }}/venv_requirements.txt"
+
+- name: update_uwsgi_docker_service_with_project_secrets | {{ role_name | basename }}
+  tags: update_uwsgi_docker_service_with_project_secrets
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  command: "docker service update --detach
+          --secret-add source={{ deployment_env }}_{{ project }}_db_user_password,target={{ deployment_env }}_{{ project }}_db_user_password,uid={{ ansible_user_uid }},mode=0400
+          --secret-add source={{ deployment_env }}_{{ project }}_secret_key,target={{ deployment_env }}_{{ project }}_secret_key,uid={{ ansible_user_uid }},mode=0400
+          web-stack_uwsgi"

@@ -1,0 +1,17 @@
+---
+backups:
+  - name: examplebackup
+    backup_client: sandbox-2
+    directories:
+      - "/exampledir"
+    excludes: []
+
+    backup_server: sandbox-1
+    backup_server_user: exampleborguser
+    repo: examplerepo
+    repo_passphrase: "examplepass"
+    repo_init_options: "--encryption=repokey"
+
+    backup_options: ""
+
+    prune_options: "--keep-daily=7 --keep-weekly=4"

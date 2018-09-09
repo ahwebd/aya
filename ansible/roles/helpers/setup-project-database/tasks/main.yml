@@ -1,0 +1,19 @@
+---
+- name: Generate_db_user_password | {{ role_name | basename }}
+  tags: Generate_db_user_password
+  shell: openssl rand -hex $((20 + RANDOM % 10))
+  register: db_user_password
+
+- name: Create_database_user | {{ role_name | basename }}
+  tags: Create_database_user
+  shell: >
+    docker exec $(docker ps -f name=^/web-stack_postgres. -q | sed -n 1p)
+    psql -U postgres -c
+    "CREATE USER {{ db_user }} WITH PASSWORD '{{ db_user_password.stdout }}';"
+
+- name: Create_database | {{ role_name | basename }}
+  tags: Create_database
+  shell: >
+    docker exec $(docker ps -f name=^/web-stack_postgres. -q | sed -n 1p)
+    psql -U postgres -c
+    "CREATE DATABASE {{ db }} OWNER {{ db_user }};"

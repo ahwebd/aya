@@ -1,0 +1,111 @@
+---
+- name: Update_operating_system_packages | {{ role_name | basename }}
+  tags: Update_operating_system_packages
+  when: update_operating_system_packages == true
+  become: true
+  apt:
+    upgrade: dist
+    update_cache: yes
+    autoremove: yes
+
+- name: Update_hosts_file_from_provided_file | {{ role_name | basename }}
+  tags: Update_hosts_file_from_provided_file
+  when: inventory_hostname != 'localhost'
+  become: true
+  with_first_found:
+  - files: "{{ playbook_dir }}/remote-machine-hosts"
+    skip: true
+  blockinfile:
+    path: /etc/hosts
+    block: |
+      {{ lookup('file', '{{ item }}') }}
+    marker: "# {mark} HOSTS MANAGED BY ANSIBLE ROLE {{ role_name | basename }}"
+
+- name: Create_aya_directory | {{ role_name | basename }}
+  tags: Create_aya_directory
+  file:
+    path: "{{ ansible_user_dir }}/.aya"
+    state: directory
+
+- tags: Install_docker
+  become: true
+  block:
+  - name: Check_if_docker_is_installed | {{ role_name | basename }}
+    tags: Check_if_docker_is_installed
+    command: docker --version
+    register: docker_installed_check
+    ignore_errors: yes
+    changed_when: false
+
+  - when: docker_installed_check is failed
+  # see: https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-from-a-package
+    name: Install_docker_from_deb | general
+    tags: Install_docker_from_deb
+    apt:
+      deb: "{{ docker_package_url }}"
+      update_cache: false
+      state: present
+
+  - name: Add_current_user_to_docker_group | {{ role_name | basename }}
+    tags: Add_current_user_to_docker_group
+    user:
+      name: "{{ ansible_user_id }}"
+      groups: docker
+      append: true
+
+  - name: Start_docker_on_boot | {{ role_name | basename }}
+    tags: Start_docker_on_boot
+    systemd:
+      name: docker
+      enabled: true
+      daemon_reload: true
+
+- tags: Configure_iptables
+  include_role:
+    name: "{{ role_path }}/../iptables"
+
+- tags: Install_glusterfs_server
+  when:
+    - "'glusterfs-server' in group_names"
+    - inventory_hostname in groups['glusterfs-server']
+  become: true
+  block:
+  - name: Check_if_glusterfs_is_installed | {{ role_name | basename }}
+    tags: Check_if_glusterfs_is_installed
+    command: glusterfs --version
+    register: glusterfs_installed_check
+    ignore_errors: yes
+    changed_when: false
+
+  - when: glusterfs_installed_check is failed
+    block:
+    - name: Install_glusterfs_server_dependencies | {{ role_name | basename }}
+      tags: Install_glusterfs_server_dependencies
+      apt:
+        name: software-properties-common
+        state: present
+
+    - name: Add_glusterfs_repo | {{ role_name | basename }}
+      tags: Add_glusterfs_repo
+      apt_repository:
+        repo: "ppa:gluster/glusterfs-{{ glusterfs_version }}"
+        state: present
+
+    - name: Install_glusterfs_server_from_repo | {{ role_name | basename }}
+      tags: Install_glusterfs_server_from_repo
+      apt:
+        name: "glusterfs-server"
+        state: present
+
+  - name: Probe_this_gluster_peer | {{ role_name | basename }}
+    tags: Probe_this_gluster_peer
+    become: true
+    delegate_to: "{{ groups['glusterfs-server'][0] }}"
+    command: gluster peer probe {{ inventory_hostname }}
+
+  - name: Start_glusterfs_server_on_boot | {{ role_name | basename }}
+    tags: Start_glusterfs_server_on_boot
+    systemd:
+      name: glusterd
+      enabled: true
+      daemon_reload: true

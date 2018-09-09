@@ -1,0 +1,19 @@
+---
+#ansible-playbook -i inventories/sandbox.ini playbooks/1-machine-setup/2-remote-machine-setup.yml
+#ansible-playbook -i inventories/example.ini playbooks/1-machine-setup/2-remote-machine-setup.yml --ask-become-pass
+
+# If your ssh public key is not yet added to remote use "--ask-pass" to specify
+# the password
+#ansible-playbook -i inventories/example.ini playbooks/1-machine-setup/2-remote-machine-setup.yml --ask-pass --ask-become-pass
+
+# make sure you update the file "remote-machine-hosts"
+
+- name: Setup_remote_machine_connection
+  tags: Setup_remote_machine_connection
+  hosts: all,!localhost
+  gather_facts: false
+  tasks:
+  - include_role:
+      name: ../../roles/machine-setup/remote-connection
+
+- import_playbook: machine-setup.yml

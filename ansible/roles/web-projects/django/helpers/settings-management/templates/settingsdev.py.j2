@@ -1,0 +1,10 @@
+from .settingsgeneral import *
+
+with open('/run/secrets/{{ deployment_env }}_{{ project }}_secret_key') as f:
+  SECRET_KEY = f.read().strip()
+with open('/run/secrets/{{ deployment_env }}_{{ project }}_db_user_password') as f:
+  DATABASES['default']['PASSWORD'] = f.read().strip()
+
+ALLOWED_HOSTS += ['{{ deployment_env }}.{{ project }}']
+
+# {{ deployment_env }} environment overrides

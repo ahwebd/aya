@@ -1,0 +1,31 @@
+*filter
+
+{# Set default policy for INPUT chain to DROP #}
+-P INPUT DROP
+
+{# Flush rules in INPUT chain #}
+-F INPUT
+
+{# Drop invalid connections #}
+-A INPUT -m conntrack --ctstate INVALID -j DROP
+
+{# Allow already established connections and related connections #}
+-A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+{# Allow hosts in this play (cluster nodes) to communicate to each other #}
+{% for host in ansible_play_hosts if host != inventory_hostname %}
+-4 -A INPUT -s {{ hostvars[host]['ansible_' + hostvars[host].cluster_network_interface].ipv4.address }} -j ACCEPT
+{% endfor %}
+
+{# Allow ssh to servers #}
+{% if inventory_hostname != 'localhost' %}
+-A INPUT -p tcp --dport 22 -j ACCEPT
+{% endif %}
+
+{# Allow icmp packets #}
+-4 -A INPUT -p icmp -j ACCEPT
+
+{# Allow loopback interface connections #}
+-A INPUT -i lo -j ACCEPT
+
+COMMIT

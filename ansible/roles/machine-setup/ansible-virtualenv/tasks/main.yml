@@ -1,0 +1,28 @@
+---
+- name: Install_pip_and_virtualenv | {{ role_name | basename }}
+  tags: Install_pip_and_virtualenv
+  become: true
+  with_items:
+    - python-pip
+    - python-virtualenv
+  apt:
+    name: "{{ item }}"
+    state: present
+
+- name: Create_python_virtual_environments_directory | {{ role_name | basename }}
+  tags: Create_python_virtual_environments_directory
+  become: true
+  file:
+    path: "{{ python_venvs_dir }}"
+    state: directory
+    owner: "{{ ansible_user_uid }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Create_ansible_virtual_env_with_needed_python_packages | {{ role_name | basename }}
+  tags: Create_ansible_virtual_env_with_needed_python_packages
+  with_items: "{{ python_packages }}"
+  pip:
+    name: "{{ item }}"
+    state: present
+    virtualenv: "{{ python_venvs_dir }}/ansible"
+    virtualenv_site_packages: yes

@@ -1,0 +1,69 @@
+---
+- ignore_errors: true
+  block:
+  - when: inventory_hostname == groups['webserver'][0]
+    block:
+    - name: Remove_uwsgi_vassal_file | {{ role_name | basename }}
+      tags: Remove_uwsgi_vassal_file
+      file:
+        path: "{{ apps_dir }}/etc/uwsgi/vassals/{{ deployment_env }}_{{ project }}.ini"
+        state: absent
+
+    - name: Remove_nginx_config_file | {{ role_name | basename }}
+      tags: Remove_nginx_config_file
+      file:
+        path: "{{ apps_dir }}/etc/nginx/conf.d/{{ deployment_env }}_{{ project }}.conf"
+        state: absent
+
+    - name: Remove_project_directory | {{ role_name | basename }}
+      tags: Remove_project_directory
+      file:
+        path: "{{ project_dir }}"
+        state: absent
+
+  - name: Remove_project_virtual_environment | {{ role_name | basename }}
+    tags: Remove_project_virtual_environment
+    when: inventory_hostname in groups['webserver']
+    file:
+      path: "{{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}"
+      state: absent
+
+  - when: inventory_hostname == groups['dbserver'][0]
+    block:
+    - name: Remove_database | {{ role_name | basename }}
+      tags: Remove_database
+      shell: >
+        docker exec $(docker ps -f name=^/web-stack_postgres. -q | sed -n 1p)
+        psql -U postgres -c
+        "DROP DATABASE IF EXISTS {{ db }};"
+    - name: Remove_database_user | {{ role_name | basename }}
+      tags: Remove_database_user
+      shell: >
+        docker exec $(docker ps -f name=^/web-stack_postgres. -q | sed -n 1p)
+        psql -U postgres -c
+        "DROP USER IF EXISTS {{ db_user }};"
+
+  - name: Remove_site_entry_from_local_machine_hosts_file | {{ role_name | basename }}
+    tags: Remove_site_entry_from_local_machine_hosts_file
+    run_once: true
+    become: true
+    delegate_to: localhost
+    lineinfile:
+      path: /etc/hosts
+      regexp: "{{ deployment_env }}.{{ project }}$"
+      state: absent
+
+  - name: Remove_project_secrets_from_uwsgi_docker_service | {{ role_name | basename }}
+    tags: Remove_project_secrets_from_uwsgi_docker_service
+    when: inventory_hostname == groups['docker-swarm-manager'][0]
+    command: "docker service update
+            --secret-rm {{ deployment_env }}_{{ project }}_db_user_password
+            --secret-rm {{ deployment_env }}_{{ project }}_secret_key
+            web-stack_uwsgi"
+
+  - name: Remove_project_secrets_from_swarm | {{ role_name | basename }}
+    tags: Remove_project_secrets_from_swarm
+    when: inventory_hostname == groups['docker-swarm-manager'][0]
+    command: "docker secret rm
+            {{ deployment_env }}_{{ project }}_db_user_password
+            {{ deployment_env }}_{{ project }}_secret_key"

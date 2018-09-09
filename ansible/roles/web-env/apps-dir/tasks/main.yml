@@ -1,0 +1,43 @@
+---
+- name: Create_apps_directory | {{ role_name | basename }}
+  tags: Create_apps_directory
+  when: inventory_hostname in groups['webserver']
+  become: true
+  file:
+    path: "{{ apps_dir }}"
+    state: directory
+    owner: "{{ ansible_user_uid }}"
+    group: "{{ ansible_user_gid }}"
+
+- tags: Setup_apps_gluster_volume
+  when:
+    - "'glusterfs-server' in group_names"
+    - inventory_hostname in groups['glusterfs-server']
+  become: true
+  block:
+  - name: Create_gluster_bricks | {{ role_name | basename }}
+    tags: Create_gluster_bricks
+    file:
+      path: "/bricks/apps"
+      state: directory
+      owner: "{{ ansible_user_uid }}"
+      group: "{{ ansible_user_gid }}"
+
+  - name: Create_apps_gluster_volume | {{ role_name | basename }}
+    tags: Create_apps_gluster_volume
+    when: inventory_hostname == groups['glusterfs-server'][0]
+    gluster_volume:
+      name: apps
+      state: present
+      force: true
+      bricks: "/bricks/apps"
+      cluster: "{{ groups['glusterfs-server'] }}"
+      replicas: "{{ groups['glusterfs-server'] | length }}"
+
+  - name: Mount_apps_gluster_volume | {{ role_name | basename }}
+    tags: Mount_apps_gluster_volume
+    mount:
+      path: "{{ apps_dir }}"
+      src: "{{ inventory_hostname }}:/apps"
+      fstype: glusterfs
+      state: mounted

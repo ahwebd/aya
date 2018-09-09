@@ -1,0 +1,17 @@
+---
+- name: Archive_docker_images_in_local_machine | {{ role_name | basename }}
+  tags: Archive_docker_images_in_local_machine
+  delegate_to: localhost
+  run_once: true
+  with_items: "{{ docker_images }}"
+  docker_image:
+    name: "{{ docker_images[item] }}"
+    archive_path: "{{ vagrant_path }}/{{ docker_images[item] | replace('/', '.') }}.tar"
+
+- name: Load_docker_images_in_vagrant_boxes | {{ role_name | basename }}
+  tags: Load_docker_images_in_vagrant_boxes
+  with_items: "{{ docker_images }}"
+  docker_image:
+    name: "{{ docker_images[item] }}"
+    load_path: "/vagrant/{{ docker_images[item] | replace('/', '.') }}.tar"
+    force: true

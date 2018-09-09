@@ -1,0 +1,18 @@
+---
+- name: Install_python_packages_in_venv | {{ role_name | basename }}
+  tags: Install_python_packages_in_venv
+  when: inventory_hostname in groups['webserver']
+  docker_container:
+    name: pip_install
+    detach: false
+    cleanup: true
+    image: "{{ docker_images['uwsgi'] }}"
+    pull: true
+    user: "{{ ansible_user_uid }}:{{ ansible_user_gid }}"
+    volumes:
+      - "{{ python_venvs_dir }}:{{ python_venvs_dir }}"
+      - "{{ apps_dir }}:{{ apps_dir }}"
+    command: bash -c "
+      source {{ python_venvs_dir }}/{{ venv_name }}/bin/activate &&
+      pip install --cache-dir {{ python_venvs_dir }}/pipcache --upgrade pip &&
+      pip install --cache-dir {{ python_venvs_dir }}/pipcache {{ venv_packages }}"

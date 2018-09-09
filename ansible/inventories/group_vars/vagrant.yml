@@ -1,0 +1,4 @@
+---
+# in your vagrant host use command "id --user --name" to get current username
+ansible_user: vagrant
+cluster_network_interface: enp0s8
