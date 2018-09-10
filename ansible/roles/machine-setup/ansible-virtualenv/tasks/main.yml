@@ -1,4 +1,9 @@
 ---
+- name: Enable_universe_distribution_component_for_ubuntu_repositories | {{ role_name | basename }}
+  tags: Enable_universe_distribution_component_for_ubuntu_repositories
+  become: true
+  command: apt-add-repository --yes --update universe
+
 - name: Install_pip_and_virtualenv | {{ role_name | basename }}
   tags: Install_pip_and_virtualenv
   become: true
