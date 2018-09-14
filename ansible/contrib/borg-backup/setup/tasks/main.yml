@@ -42,6 +42,20 @@
       src: "{{ ansible_user_dir }}/.ssh/id_rsa.pub"
     register: ssh_public_key
 
+  - become: true
+    block:
+    - name: Generate_ssh_key_pair_if_not_existing_for_root | {{ role_name | basename }}
+      tags: Generate_ssh_key_pair_if_not_existing_for_root
+      user:
+        name: root
+        generate_ssh_key: true
+
+    - name: Read_root_ssh_public_key | {{ role_name | basename }}
+      tags: Read_root_ssh_public_key
+      slurp:
+        src: "/root/.ssh/id_rsa.pub"
+      register: root_ssh_public_key
+
 - tags: Setup_backup_clients_in_backup_servers
   when: inventory_hostname in groups['backupserver']
   become: true
@@ -51,7 +65,7 @@
     with_inventory_hostnames: backupclient
     authorized_key:
       user: "{{ backup_server_user }}"
-      key: "{{ hostvars[ item ]['ssh_public_key']['content'] | b64decode }}"
+      key: "{{ hostvars[ item ]['ssh_public_key']['content'] | b64decode }}\n{{ hostvars[ item ]['root_ssh_public_key']['content'] | b64decode }}"
       key_options: 'command="cd {{ pool }}/{{ item }};borg serve --restrict-to-path {{ pool }}/{{ item }}",restrict'
 
   - name: Create_backup_client_pool_directories | {{ role_name | basename }}

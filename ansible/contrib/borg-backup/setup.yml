@@ -1,5 +1,5 @@
 ---
-#ansible-playbook -i inventories/backup.ini custom/borg-backup/setup.yml --ask-become-pass
+#ansible-playbook -i inventories/backup.ini contrib/borg-backup/setup.yml --ask-become-pass
 
 - name: Borg_backup
   hosts: backupserver,backupclient
@@ -8,4 +8,4 @@
   - include_vars: setup-variables.yml
   - tags: Borg_backup
     include_role:
-      name: ../../roles/borg-backup/setup
+      name: ../borg-backup/setup

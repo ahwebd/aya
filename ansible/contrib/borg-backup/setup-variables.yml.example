@@ -2,7 +2,7 @@
 #https://github.com/borgbackup/borg/releases/latest
 borg_version: "1.1.7"
 
-backup_server_user: exampleborguser
-backup_server_group: exampleborguser
+backup_server_user: borg
+backup_server_group: borg
 home: "/home/{{ backup_server_user }}"
 pool: "{{ home }}/repos"

@@ -1,4 +1,6 @@
 ---
+#https://borgbackup.readthedocs.io/en/stable/usage/create.html
+#https://borgbackup.readthedocs.io/en/stable/usage/prune.html
 backups:
   - name: examplebackup
     backup_client: sandbox-2
@@ -7,7 +9,7 @@ backups:
     excludes: []
 
     backup_server: sandbox-1
-    backup_server_user: exampleborguser
+    backup_server_user: borg
     repo: examplerepo
     repo_passphrase: "examplepass"
     repo_init_options: "--encryption=repokey"
