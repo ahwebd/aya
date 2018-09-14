@@ -14,7 +14,7 @@
   tags: Settings_file_aldryn_newsblog
   when: inventory_hostname == groups['webserver'][0]
   blockinfile:
-    path: "{{ project_dir }}/{{ project }}/settings.py"
+    path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
     block: |
       INSTALLED_APPS += (
         'aldryn_apphooks_config',
