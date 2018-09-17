@@ -46,3 +46,6 @@ iptables_conf_template: "templates/iptables.conf.j2"
 # configuring iptables.
 # Defaulted to loopback interface (single node case).
 cluster_network_interface: lo
+
+# Docker service serving as database host for applications.
+db_host: web-stack_postgres

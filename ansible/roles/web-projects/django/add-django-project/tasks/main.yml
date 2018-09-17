@@ -1,11 +1,10 @@
 ---
-- tags: Add_site_entry_to_local_machine_hosts_file | add-django-project
+- tags: Add_site_entry_to_local_machine_hosts_file
   run_once: true
   include_role:
     name: "{{ role_path }}/../../../helpers/add-project-entry-to-hosts-file"
 
-- tags: Setup_project_database | add-django-project
-  when: inventory_hostname == groups['dbserver'][0]
+- tags: Setup_project_database
   include_role:
     name: "{{ role_path }}/../../../helpers/setup-project-database"
 
@@ -67,7 +66,7 @@
                   'ENGINE': 'django.db.backends.postgresql',
                   'NAME': '{{ db }}',
                   'USER': '{{ db_user }}',
-                  'HOST': 'web-stack_postgres',
+                  'HOST': '{{ db_host }}',
                   'PORT': '5432',
               }
           }

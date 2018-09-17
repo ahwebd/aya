@@ -33,15 +33,22 @@
     - name: Remove_database | {{ role_name | basename }}
       tags: Remove_database
       shell: >
-        docker exec $(docker ps -f name=^/web-stack_postgres. -q | sed -n 1p)
+        docker exec $(docker ps -f name=^/{{ db_host }}. -q | sed -n 1p)
         psql -U postgres -c
         "DROP DATABASE IF EXISTS {{ db }};"
     - name: Remove_database_user | {{ role_name | basename }}
       tags: Remove_database_user
       shell: >
-        docker exec $(docker ps -f name=^/web-stack_postgres. -q | sed -n 1p)
+        docker exec $(docker ps -f name=^/{{ db_host }}. -q | sed -n 1p)
         psql -U postgres -c
         "DROP USER IF EXISTS {{ db_user }};"
+
+  - name: Remove_database_user_from_pgpool_pool_passwd_file | {{ role_name | basename }}
+    tags: Remove_database_user_from_pgpool_pool_passwd_file
+    when: db_host == "pgstack_pgpool" and inventory_hostname in groups['dbserver']
+    shell: >
+      docker exec $(docker ps -f name=^/{{ db_host }}. -q | sed -n 1p)
+      sed -i '/{{ db_user }}/d' /usr/local/etc/pool_passwd
 
   - name: Remove_site_entry_from_local_machine_hosts_file | {{ role_name | basename }}
     tags: Remove_site_entry_from_local_machine_hosts_file

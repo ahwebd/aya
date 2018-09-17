@@ -23,6 +23,7 @@
 
 - name: Django_create_superuser | {{ role_name | basename }}
   tags: Django_create_superuser
+  when: inventory_hostname == groups['webserver'][0]
   vars:
     admin_username: "admin"
     admin_password: "admin"

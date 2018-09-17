@@ -8,7 +8,7 @@ db: "{{ deployment_env }}_{{ project }}"
 db_user: "{{ db }}"
 
 djangocms_install_command: "djangocms
-    --db postgres://{{ db_user }}:\"{{ hostvars[groups['dbserver'][0]]['db_user_password']['stdout'] }}\"@web-stack_postgres:5432/{{ db }}
+    --db postgres://{{ db_user }}:\"{{ hostvars[groups['dbserver'][0]]['db_user_password']['stdout'] }}\"@{{ db_host }}:5432/{{ db }}
     --timezone {{ timezone }}
     --permissions {{ permissions }}
     --languages {{ languages }}

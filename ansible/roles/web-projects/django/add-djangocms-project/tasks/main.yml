@@ -1,11 +1,10 @@
 ---
-- tags: Add_site_entry_to_local_machine_hosts_file | add-djangocms-project
+- tags: Add_site_entry_to_local_machine_hosts_file
   run_once: true
   include_role:
     name: "{{ role_path }}/../../../helpers/add-project-entry-to-hosts-file"
 
-- tags: Setup_project_database | add-djangocms-project
-  when: inventory_hostname == groups['dbserver'][0]
+- tags: Setup_project_database
   include_role:
     name: "{{ role_path }}/../../../helpers/setup-project-database"
 
