@@ -1,0 +1,14 @@
+---
+- when: inventory_hostname == groups['docker-swarm-manager'][0]
+  block:
+  - name: Create_postgres_cluster_stack_yml_file | {{ role_name | basename }}
+    tags: Create_postgres_cluster_stack_yml_file
+    template:
+      src: "{{ playbook_dir }}/postgres-cluster/templates/{{ pgcluster_stack_template_name }}"
+      dest: "{{ ansible_user_dir }}/.aya/pgstack.yml"
+
+  - name: Deploy_postgres_cluster_stack | {{ role_name | basename }}
+    tags: Deploy_postgres_cluster_stack
+    shell: >
+      docker stack deploy
+      --compose-file {{ ansible_user_dir }}/.aya/pgstack.yml pgstack

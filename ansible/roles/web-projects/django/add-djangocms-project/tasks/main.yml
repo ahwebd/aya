@@ -13,7 +13,7 @@
   when: inventory_hostname == groups['docker-swarm-manager'][0]
   docker_secret:
     name: "{{ deployment_env }}_{{ project }}_db_user_password"
-    data: "{{ hostvars[groups['dbserver'][0]]['db_user_password']['stdout'] }}"
+    data: "{{ hostvars[ db_node ]['db_user_password']['stdout'] }}"
 
 - name: Create_project_virtual_environment | {{ role_name | basename }}
   tags: Create_project_virtual_environment
@@ -45,11 +45,13 @@
     include_role:
       name: "{{ role_path }}/../helpers/settings-management"
 
-  - tags: Create_uwsgi_vassal_file | add-djangocms-project
+  - name: Create_uwsgi_vassal_file | {{ role_name | basename }}
+    tags: Create_uwsgi_vassal_file
     include_role:
       name: "{{ role_path }}/../helpers/create-uwsgi-vassal-file"
 
-  - tags: Create_nginx_config_file | add-djangocms-project
+  - name: Create_nginx_config_file | {{ role_name | basename }}
+    tags: Create_nginx_config_file
     include_role:
       name: "{{ role_path }}/../helpers/create-nginx-config-file"
 
@@ -67,7 +69,7 @@
 - name: update_uwsgi_docker_service_with_project_secrets | {{ role_name | basename }}
   tags: update_uwsgi_docker_service_with_project_secrets
   when: inventory_hostname == groups['docker-swarm-manager'][0]
-  command: "docker service update --detach
+  command: "docker service update
           --secret-add source={{ deployment_env }}_{{ project }}_db_user_password,target={{ deployment_env }}_{{ project }}_db_user_password,uid={{ ansible_user_uid }},mode=0400
           --secret-add source={{ deployment_env }}_{{ project }}_secret_key,target={{ deployment_env }}_{{ project }}_secret_key,uid={{ ansible_user_uid }},mode=0400
           web-stack_uwsgi"

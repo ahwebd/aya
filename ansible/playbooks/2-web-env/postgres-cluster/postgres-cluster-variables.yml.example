@@ -1,0 +1,9 @@
+---
+pgcluster_stack_template_name: localhost-pgstack.yml.j2
+
+# Passwords can be generated using command:
+# openssl rand -hex $((20 + RANDOM % 10))
+pgcluster_postgres_password: 0cca01db35bf249ab2c1ee0234d95bb52ab215244d8e
+pgcluster_replication_password: 0152852c86b3feac6dce894b864b2b6f5664fea698
+pgcluster_pgpool_pcp_password: fef9b5cbc4c8936e8e81998846b647ae1c0c9ab4caa0eb79d2
+pgcluster_pgpool_check_password: 7bdb2fc9d159d6c24bac34438b69e6459d3839f3

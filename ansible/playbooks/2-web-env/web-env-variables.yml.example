@@ -1,0 +1,3 @@
+---
+# Setup a high availability postgres cluster?
+setup_postgres_cluster: false

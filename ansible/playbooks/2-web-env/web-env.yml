@@ -12,6 +12,8 @@
   hosts: all
 
   tasks:
+  - include_vars: web-env-variables.yml
+
   - tags: Setup_apps_directory
     include_role:
       name: ../../roles/web-env/apps-dir
@@ -23,3 +25,10 @@
   - tags: Setup_web_stack
     include_role:
       name: ../../roles/web-env/web-stack
+
+  - tags: Setup_postgres_cluster
+    when: setup_postgres_cluster
+    block:
+    - include_vars: postgres-cluster/postgres-cluster-variables.yml
+    - include_role:
+        name: ../../roles/web-env/postgres-cluster

@@ -23,9 +23,12 @@ vagrant_package_url: "https://releases.hashicorp.com/vagrant/2.1.4/vagrant_2.1.4
 
 # docker images
 docker_images:
-  postgres: "ahwebd/postgres"
   nginx: "ahwebd/nginx"
   uwsgi: "ahwebd/python"
+  postgres: "ahwebd/postgres"
+  postgres-repmgr: "ahwebd/postgres-repmgr"
+  barman-postgres: "ahwebd/barman-postgres"
+  pgpool-postgres: "ahwebd/pgpool-postgres"
 
 # web apps directory, absolute path without trailing slash
 apps_dir: "/apps"
@@ -46,6 +49,3 @@ iptables_conf_template: "templates/iptables.conf.j2"
 # configuring iptables.
 # Defaulted to loopback interface (single node case).
 cluster_network_interface: lo
-
-# Docker service serving as database host for applications.
-db_host: web-stack_postgres

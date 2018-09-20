@@ -4,5 +4,21 @@
 # constructed from other variables to facilitate writing tasks.
 
 project_dir: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}"
+
 db: "{{ deployment_env }}_{{ project }}"
 db_user: "{{ db }}"
+
+db_node: "{{
+  groups['postgres-cluster-pgmaster'][0] if database_in_postgres_cluster
+  else groups['dbserver'][0]
+  }}"
+
+db_docker_service:  "{{
+  'pgstack_pgmaster' if database_in_postgres_cluster
+  else 'web-stack_postgres'
+  }}"
+
+clients_db_host:  "{{
+  'pgstack_pgpool' if database_in_postgres_cluster
+  else 'web-stack_postgres'
+  }}"

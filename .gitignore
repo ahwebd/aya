@@ -18,6 +18,7 @@ ansible/inventories/group_vars/*
 ansible/playbooks/test/
 ansible/playbooks/1-machine-setup/local-machine-hosts
 ansible/playbooks/1-machine-setup/remote-machine-hosts
+ansible/playbooks/**/*.j2
 
 ansible/roles/test/
 

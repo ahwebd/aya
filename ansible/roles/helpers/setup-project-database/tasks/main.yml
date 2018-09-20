@@ -1,5 +1,5 @@
 ---
-- when: inventory_hostname == groups['dbserver'][0]
+- when: inventory_hostname == db_node
   block:
   - name: Generate_db_user_password | {{ role_name | basename }}
     tags: Generate_db_user_password
@@ -9,21 +9,21 @@
   - name: Create_database_user | {{ role_name | basename }}
     tags: Create_database_user
     shell: >
-      docker exec $(docker ps -f name=^/{{ db_host }}. -q | sed -n 1p)
+      docker exec $(docker ps -f name=^/{{ db_docker_service }}. -q | sed -n 1p)
       psql -U postgres -c
       "CREATE USER {{ db_user }} WITH PASSWORD '{{ db_user_password.stdout }}';"
 
   - name: Create_database | {{ role_name | basename }}
     tags: Create_database
     shell: >
-      docker exec $(docker ps -f name=^/{{ db_host }}. -q | sed -n 1p)
+      docker exec $(docker ps -f name=^/{{ db_docker_service }}. -q | sed -n 1p)
       psql -U postgres -c
       "CREATE DATABASE {{ db }} OWNER {{ db_user }};"
 
 - name: Add_database_user_to_pgpool_pool_passwd_file | {{ role_name | basename }}
   tags: Add_database_user_to_pgpool_pool_passwd_file
-  when: db_host == "pgstack_pgpool" and inventory_hostname in groups['dbserver']
+  when: database_in_postgres_cluster and inventory_hostname in groups['postgres-cluster-pgpool']
   shell: >
-    docker exec $(docker ps -f name=^/{{ db_host }}. -q | sed -n 1p)
+    docker exec $(docker ps -f name=^/pgstack_pgpool. -q | sed -n 1p)
     pg_md5 --md5auth --config-file=/usr/local/etc/pgpool.conf
-    --username={{ db_user }} {{ db_user_password.stdout }}
+    --username={{ db_user }} {{ hostvars[ db_node ]['db_user_password']['stdout'] }}

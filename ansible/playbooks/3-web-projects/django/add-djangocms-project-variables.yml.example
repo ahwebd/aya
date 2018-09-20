@@ -4,6 +4,9 @@ project: djangocmsexample
 # Deployment environment (prod, dev, staging/stg, test, play ...)
 deployment_env: play
 
+# Create project database in postgres-cluster?
+database_in_postgres_cluster: false
+
 # Keep empty for non production projects
 domain: ""
 
