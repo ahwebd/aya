@@ -27,7 +27,7 @@
   - name: Generate_Diffie_Hellman_group_if_not_existing | {{ role_name | basename }}
     tags: Generate_Diffie_Hellman_group_if_not_existing
     shell: >
-      test -e {{ apps_dir }}/etc/dhparams.pem ||
+      test -e {{ apps_dir }}/etc/dhparam.pem ||
       openssl dhparam -out {{ apps_dir }}/etc/dhparam.pem 2048
 
   - name: Create_nginx_https_config_file | {{ role_name | basename }}
@@ -35,6 +35,14 @@
     template:
       src: templates/nginx_https.conf.j2
       dest: "{{ apps_dir }}/etc/nginx/conf.d/nginx_https_{{ domain }}.conf"
+    notify: Restart_nginx | common-handlers
+
+  - name: Create_nginx_default_server_file_if_not_existing | {{ role_name | basename }}
+    tags: Create_nginx_default_server_file_if_not_existing
+    template:
+      src: templates/default_server.conf.j2
+      dest: "{{ apps_dir }}/etc/nginx/conf.d/default_server.conf"
+      force: false
     notify: Restart_nginx | common-handlers
 
   - name: Delete_initial_nginx_config_file | {{ role_name | basename }}
@@ -49,5 +57,5 @@
     cron:
       name: tls_certificates_renewal_cron_job
       special_time: weekly
-      job: "docker run -v {{ apps_dir }}/etc/letsencrypt:/etc/letsencrypt
-        -v {{ apps_dir }}:{{ apps_dir }} certbot/certbot renew"
+      job: "docker run --rm -v {{ apps_dir }}/etc/letsencrypt:/etc/letsencrypt
+        -v {{ apps_dir }}:{{ apps_dir }} certbot/certbot renew --quiet > /dev/null"

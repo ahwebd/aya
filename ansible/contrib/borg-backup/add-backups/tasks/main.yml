@@ -23,7 +23,7 @@
     become: true
     cron:
       name: "Borg_backup_{{ item.name }}"
-      job: "bash {{ ansible_user_dir }}/.aya/borg/{{ item.name }}_backup.sh"
+      job: "bash {{ ansible_user_dir }}/.aya/borg/{{ item.name }}_backup.sh > /dev/null"
       hour: "{{ item.backup_hour | default( 6 | random ) }}"
       minute: "{{ item.backup_minute | default( 59 |random ) }}"
       day: "{{ item.backup_day | default('*') }}"
@@ -41,9 +41,10 @@
 
   - name: Create_cron_jobs_for_prune | {{ role_name | basename }}
     tags: Create_cron_jobs_for_prune
+    become: true
     cron:
       name: "Borg_prune_{{ item.name }}"
-      job: "bash {{ ansible_user_dir }}/.aya/borg/{{ item.name }}_prune.sh"
+      job: "bash {{ ansible_user_dir }}/.aya/borg/{{ item.name }}_prune.sh > /dev/null"
       hour: "{{ item.prune_hour | default( 6 | random ) }}"
       minute: "{{ item.prune_minute | default( 59 |random ) }}"
       day: "{{ item.prune_day | default('*') }}"

@@ -16,9 +16,6 @@ Vagrant.configure("2") do |config|
       node.vm.hostname = "sandbox-#{i}"
       # Configure network with a static ip
       node.vm.network "private_network", ip: "192.168.33.#{i+10}"
-      # Add a static ipv6
-      node.vm.provision "shell",
-        inline: "sudo ifconfig enp0s8 add fd33::#{i+10}/64"
     end
   end
 end

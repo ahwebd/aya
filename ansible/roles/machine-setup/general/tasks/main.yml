@@ -38,27 +38,36 @@
     changed_when: false
 
   - when: docker_installed_check is failed
-  # see: https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-from-a-package
-    name: Install_docker_from_deb | general
-    tags: Install_docker_from_deb
-    apt:
-      deb: "{{ docker_package_url }}"
-      update_cache: false
-      state: present
+    block:
+    # see: https://docs.docker.com/engine/installation/linux/docker-ce/ubuntu/#install-from-a-package
+    - name: Install_docker_from_deb | general
+      tags: Install_docker_from_deb
+      apt:
+        deb: "{{ docker_package_url }}"
+        update_cache: false
+        state: present
 
-  - name: Add_current_user_to_docker_group | {{ role_name | basename }}
-    tags: Add_current_user_to_docker_group
-    user:
-      name: "{{ ansible_user_id }}"
-      groups: docker
-      append: true
+    - name: Configure_docker_daemon | {{ role_name | basename }}
+      tags: Configure_docker_daemon
+      template:
+        src: templates/docker-daemon.json.j2
+        dest: /etc/docker/daemon.json
+        mode: '0600'
 
-  - name: Start_docker_on_boot | {{ role_name | basename }}
-    tags: Start_docker_on_boot
-    systemd:
-      name: docker
-      enabled: true
-      daemon_reload: true
+    - name: Add_current_user_to_docker_group | {{ role_name | basename }}
+      tags: Add_current_user_to_docker_group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: true
+
+    - name: Restart_docker_and_enable_on_boot | {{ role_name | basename }}
+      tags: Restart_docker_and_enable_on_boot
+      systemd:
+        name: docker
+        enabled: true
+        state: restarted
+        daemon_reload: true
 
 - tags: Configure_iptables
   include_role:
@@ -101,7 +110,7 @@
     tags: Probe_this_gluster_peer
     become: true
     delegate_to: "{{ groups['glusterfs-server'][0] }}"
-    command: gluster peer probe {{ inventory_hostname }}
+    command: gluster peer probe {{ hostvars[inventory_hostname]['ansible_' + cluster_network_interface].ipv4.address }}
 
   - name: Start_glusterfs_server_on_boot | {{ role_name | basename }}
     tags: Start_glusterfs_server_on_boot

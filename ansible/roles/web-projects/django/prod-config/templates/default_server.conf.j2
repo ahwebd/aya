@@ -1,0 +1,8 @@
+server {
+  # Unrecognized hosts will receive '444 no response'
+  # https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/#allowed-hosts
+  listen 80 default_server;
+  listen [::]:80 default_server;
+
+  return 444;
+}

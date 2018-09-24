@@ -49,3 +49,8 @@ iptables_conf_template: "templates/iptables.conf.j2"
 # configuring iptables.
 # Defaulted to loopback interface (single node case).
 cluster_network_interface: lo
+
+# Docker logging limits
+# https://docs.docker.com/config/containers/logging/json-file/
+docker_log_files_max_size: "200k"
+docker_logs_max_files_count: "50"

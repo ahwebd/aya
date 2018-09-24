@@ -31,13 +31,13 @@
       state: present
       force: true
       bricks: "/bricks/apps"
-      cluster: "{{ groups['glusterfs-server'] }}"
+      cluster: "{{ groups['glusterfs-server'] | map('extract', hostvars, 'ansible_' + cluster_network_interface) | map(attribute='ipv4') | map(attribute='address') | list }}"
       replicas: "{{ groups['glusterfs-server'] | length }}"
 
   - name: Mount_apps_gluster_volume | {{ role_name | basename }}
     tags: Mount_apps_gluster_volume
     mount:
       path: "{{ apps_dir }}"
-      src: "{{ inventory_hostname }}:/apps"
+      src: "{{ hostvars[inventory_hostname]['ansible_' + cluster_network_interface].ipv4.address }}:/apps"
       fstype: glusterfs
       state: mounted

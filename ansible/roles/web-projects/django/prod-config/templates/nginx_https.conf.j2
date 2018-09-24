@@ -29,6 +29,7 @@ server {
   ssl_stapling on;
   ssl_stapling_verify on;
   ssl_trusted_certificate {{ apps_dir }}/etc/letsencrypt/live/{{ domain }}/chain.pem;
+  resolver 127.0.0.11;
 
   # redirect www to non-www
   if ( $host = www.{{ domain }} ) {
