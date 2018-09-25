@@ -27,3 +27,8 @@
     docker exec $(docker ps -f name=^/pgstack_pgpool. -q | sed -n 1p)
     pg_md5 --md5auth --config-file=/usr/local/etc/pgpool.conf
     --username={{ db_user }} {{ hostvars[ db_node ]['db_user_password']['stdout'] }}
+
+- name: Restart_pgpool | {{ role_name | basename }}
+  tags: Restart_pgpool
+  when: database_in_postgres_cluster and inventory_hostname == groups['docker-swarm-manager'][0]
+  command: "docker service update pgstack_pgpool --force"
