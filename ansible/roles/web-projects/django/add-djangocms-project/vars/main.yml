@@ -24,7 +24,7 @@ clients_db_host:  "{{
   }}"
 
 djangocms_install_command: "djangocms
-    --db postgres://{{ db_user }}:\"{{ hostvars[ db_node ]['db_user_password']['stdout'] }}\"@{{ clients_db_host }}:5432/{{ db }}
+    --db postgres://{{ db_user }}:\"{{ hostvars[ db_node ]['db_user_password']['stdout'] }}\"@{{ db_docker_service }}:5432/{{ db }}
     --timezone {{ timezone }}
     --permissions {{ permissions }}
     --languages {{ languages }}
