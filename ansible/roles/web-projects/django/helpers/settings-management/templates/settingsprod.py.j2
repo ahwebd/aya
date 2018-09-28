@@ -5,6 +5,9 @@ with open('/run/secrets/{{ deployment_env }}_{{ project }}_secret_key') as f:
 with open('/run/secrets/{{ deployment_env }}_{{ project }}_db_user_password') as f:
   DATABASES['default']['PASSWORD'] = f.read().strip()
 
+DATABASES['default']['NAME'] = '{{ db }}'
+DATABASES['default']['USER'] = '{{ db_user }}'
+
 # {{ deployment_env }} environment overrides
 #https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 

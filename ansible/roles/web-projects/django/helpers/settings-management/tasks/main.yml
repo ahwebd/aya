@@ -15,14 +15,16 @@
       remote_src: yes
       force: false
 
-  - name: Remove_sensitive_info_from_general_settings_file | {{ role_name | basename }}
-    tags: Remove_sensitive_info_from_general_settings_file
+  - name: Remove_sensitive_and_env_related_info_from_general_settings_file | {{ role_name | basename }}
+    tags: Remove_sensitive_and_env_related_info_from_general_settings_file
     lineinfile:
       path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
       regexp: "^\\s*{{ item }}"
       state: absent
     with_items:
       - "SECRET_KEY = "
+      - "'NAME': "
+      - "'USER': "
       - "'PASSWORD': "
 
   - name: Create_environment_specific_settings_file | {{ role_name | basename }}
