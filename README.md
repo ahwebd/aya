@@ -1,1 +1,1 @@
-Aya is a project built primarily with ansible to facilitate the setup of web environments and websites/webapps.
+With "Aya", building a web environment or making a website/webapp becomes quick and easy. Aya is project that uses ansible, docker and other modern tools to facilitate provisioning machines and getting your web app up and running in a very short time.
