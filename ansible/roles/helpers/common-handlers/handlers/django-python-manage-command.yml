@@ -1,4 +1,12 @@
 ---
+- name: Change_db_host_from_pgpool_to_pgmaster_in_settings | {{ role_name | basename }}
+  tags: Change_db_host_from_pgpool_to_pgmaster_in_settings
+  when: python_manage_command in ['migrate',]
+  replace:
+    path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+    regexp: 'pgstack_pgpool'
+    replace: 'pgstack_pgmaster'
+
 - name: Python_manage_command | {{ role_name | basename }}
   tags: Python_manage_command
   when: inventory_hostname == groups['webserver'][0]
@@ -7,3 +15,11 @@
     $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
       source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
       python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py {{ python_manage_command }}"
+
+- name: Change_db_host_from_pgmaster_to_pgpool_in_settings | {{ role_name | basename }}
+  tags: Change_db_host_from_pgmaster_to_pgpool_in_settings
+  when: python_manage_command in ['migrate',]
+  replace:
+    path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+    regexp: 'pgstack_pgmaster'
+    replace: 'pgstack_pgpool'
