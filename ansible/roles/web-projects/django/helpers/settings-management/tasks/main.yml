@@ -23,9 +23,9 @@
       state: absent
     with_items:
       - "SECRET_KEY = "
-      - "'NAME': "
-      - "'USER': "
-      - "'PASSWORD': "
+      - "'NAME': '{{ db }}'"
+      - "'USER': '{{ db_user }}'"
+      - "'PASSWORD': '{{ hostvars[ db_node ]['db_user_password']['stdout'] }}'"
 
   - name: Create_environment_specific_settings_file | {{ role_name | basename }}
     tags: Create_environment_specific_settings_file
