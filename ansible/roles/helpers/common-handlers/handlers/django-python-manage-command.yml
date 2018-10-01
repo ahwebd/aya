@@ -3,7 +3,7 @@
   tags: Change_db_host_from_pgpool_to_pgmaster_in_settings
   when: python_manage_command in ['migrate',]
   replace:
-    path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+    path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settingsgeneral.py"
     regexp: 'pgstack_pgpool'
     replace: 'pgstack_pgmaster'
 
@@ -20,6 +20,6 @@
   tags: Change_db_host_from_pgmaster_to_pgpool_in_settings
   when: python_manage_command in ['migrate',]
   replace:
-    path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+    path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settingsgeneral.py"
     regexp: 'pgstack_pgmaster'
     replace: 'pgstack_pgpool'
