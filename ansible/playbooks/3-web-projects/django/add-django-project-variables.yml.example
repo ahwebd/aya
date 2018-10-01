@@ -21,3 +21,8 @@ django_version: "1.11"
 
 # extra python packages to install in project virtualenv
 extra_python_packages: ""
+
+# superuser credentials
+admin_username: "admin"
+admin_email: "admin@example.com"
+admin_password: "admin"

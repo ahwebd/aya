@@ -51,7 +51,6 @@
     notify:
       - Django_migrate | common-handlers
       - Django_collect_static_files | common-handlers
-      - Django_create_superuser | common-handlers
 
   - name: Project_settings | {{ role_name | basename }}
     tags: Project_settings
@@ -90,3 +89,15 @@
           --secret-add source={{ deployment_env }}_{{ project }}_db_user_password,target={{ deployment_env }}_{{ project }}_db_user_password,uid={{ ansible_user_uid }},mode=0400
           --secret-add source={{ deployment_env }}_{{ project }}_secret_key,target={{ deployment_env }}_{{ project }}_secret_key,uid={{ ansible_user_uid }},mode=0400
           web-stack_uwsgi"
+
+- meta: flush_handlers
+
+- name: Django_create_superuser | {{ role_name | basename }}
+  tags: Django_create_superuser
+  when: inventory_hostname == groups['webserver'][0]
+  shell: >
+    docker exec
+    $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
+      source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
+      echo \"from django.contrib.auth.models import User; User.objects.create_superuser('{{ admin_username }}', '{{ admin_email }}', '{{ admin_password }}')\" |
+      python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py shell"
