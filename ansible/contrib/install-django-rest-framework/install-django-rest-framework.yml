@@ -1,0 +1,15 @@
+---
+#ansible-playbook -i inventories/localhost.ini contrib/install-django-rest-framework/install-django-rest-framework.yml
+#ansible-playbook -i inventories/sandbox.ini contrib/install-django-rest-framework/install-django-rest-framework.yml
+
+- name: Install_django_rest_framework
+  hosts: all
+  vars:
+    project_dir: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}"
+  tasks:
+  - include_vars: install-django-rest-framework-variables.yml
+  - include_role:
+      name: ../../roles/helpers/common-handlers
+
+  - include_role:
+      name: ../install-django-rest-framework

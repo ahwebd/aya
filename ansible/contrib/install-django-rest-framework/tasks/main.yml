@@ -1,0 +1,24 @@
+---
+# http://www.django-rest-framework.org/#installation
+
+- name: Install_djangorestframework_package | {{ role_name | basename }}
+  tags: Install_djangorestframework_package
+  when: inventory_hostname in groups['webserver']
+  include_role:
+    name: ../../roles/helpers/pip-install
+  vars:
+    venv_name: "{{ deployment_env }}_{{ project }}"
+    venv_packages: "djangorestframework"
+
+- name: Settings_file_djangorestframework | {{ role_name | basename }}
+  tags: Settings_file_djangorestframework
+  when: inventory_hostname == groups['webserver'][0]
+  blockinfile:
+    path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+    block: |
+      INSTALLED_APPS += (
+        'rest_framework',
+      )
+    marker: "# {mark} djangorestframework CONFIG MANAGED BY ANSIBLE ROLE {{ role_name | basename }}"
+  notify:
+    - Restart_uwsgi | common-handlers
