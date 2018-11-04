@@ -2,17 +2,15 @@
 - name: Enable_universe_distribution_component_for_ubuntu_repositories | {{ role_name | basename }}
   tags: Enable_universe_distribution_component_for_ubuntu_repositories
   become: true
-  command: apt-add-repository --yes --update universe
+  command: apt-add-repository --yes universe
 
 - name: Install_pip_and_virtualenv | {{ role_name | basename }}
   tags: Install_pip_and_virtualenv
   become: true
-  with_items:
-    - python-pip
-    - python-virtualenv
   apt:
-    name: "{{ item }}"
+    name: ['python-pip', 'python-virtualenv']
     state: present
+    update_cache: yes
 
 - name: Create_python_virtual_environments_directory | {{ role_name | basename }}
   tags: Create_python_virtual_environments_directory
@@ -25,9 +23,8 @@
 
 - name: Create_ansible_virtual_env_with_needed_python_packages | {{ role_name | basename }}
   tags: Create_ansible_virtual_env_with_needed_python_packages
-  with_items: "{{ python_packages }}"
   pip:
-    name: "{{ item }}"
+    name: '{{ python_packages }}'
     state: present
     virtualenv: "{{ python_venvs_dir }}/ansible"
     virtualenv_site_packages: yes

@@ -4,7 +4,7 @@
   hosts: all
   vars:
     # Before a python virtualenv is installed for ansible we use the global python
-    ansible_python_interpreter: /usr/bin/python
+    ansible_python_interpreter: /usr/bin/python3
   tasks:
   - include_role:
       name: ../../roles/machine-setup/ansible-virtualenv

@@ -9,11 +9,16 @@ RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 # check polymer-cli requirements for nodejs version
 # https://www.polymer-project.org/3.0/docs/tools/polymer-cli#install
 # https://www.polymer-project.org/3.0/docs/tools/node-support
-# https://nodejs.org/en/download/package-manager/#debian-and-ubuntu-based-linux-distributions
 
 # Environment variables
+
+# https://github.com/creationix/nvm/releases
 ENV NVM_VERSION v0.33.11
-ENV NODE_VERSION 8.12.0
+
+# https://www.polymer-project.org/3.0/docs/tools/node-support
+# https://nodejs.org/en/download/
+ENV NODE_VERSION 10.13.0
+
 ENV NVM_DIR /usr/local/nvm
 
 # install nvm
