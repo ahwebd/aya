@@ -11,6 +11,10 @@
 - name: Setup_remote_machine_connection
   tags: Setup_remote_machine_connection
   hosts: all,!localhost
+  vars:
+    # Before a python virtualenv is installed for ansible we use the global python
+    ansible_python_interpreter: /usr/bin/python3
+  gather_facts: false
   tasks:
   - include_role:
       name: ../../roles/machine-setup/remote-connection

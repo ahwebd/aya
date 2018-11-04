@@ -1,3 +1,5 @@
 ---
 # Setup a high availability postgres cluster?
+# if yes please check the directory "postgres-cluster" and modify the variables
+# file as needed.
 setup_postgres_cluster: false

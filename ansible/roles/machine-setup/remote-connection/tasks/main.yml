@@ -19,6 +19,10 @@
       name: "{{ remote_host_entry.stdout.split(' ')[0] }}"
       key: "{{ lookup('pipe', 'ssh-keyscan -p {{ ansible_port | default(22) }} -T 20 -H -t rsa {{ remote_host_entry.stdout.split(' ')[0] }}') }}"
 
+- name: Gather_facts | {{ role_name | basename }}
+  tags: Gather_facts
+  setup:
+
 - name: Copy_ssh_public_key_to_remote | {{ role_name | basename }}
   tags: Copy_ssh_public_key_to_remote
   authorized_key:

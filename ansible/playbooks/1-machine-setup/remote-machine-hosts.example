@@ -2,7 +2,3 @@
 192.168.33.11 sandbox-1
 192.168.33.12 sandbox-2
 192.168.33.13 sandbox-3
-
-fd33::11 ip6-sandbox-1
-fd33::12 ip6-sandbox-2
-fd33::13 ip6-sandbox-3
