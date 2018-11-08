@@ -10,11 +10,11 @@
     venv_name: "{{ deployment_env }}_{{ project }}"
     venv_packages: "djangorestframework"
 
-- name: Settings_file_djangorestframework | {{ role_name | basename }}
-  tags: Settings_file_djangorestframework
+- name: Settings_for_djangorestframework | {{ role_name | basename }}
+  tags: Settings_for_djangorestframework
   when: inventory_hostname == groups['webserver'][0]
   blockinfile:
-    path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+    path: "{{ project_dir }}/{{ project }}/settings/base.py"
     block: |
       INSTALLED_APPS += (
         'rest_framework',

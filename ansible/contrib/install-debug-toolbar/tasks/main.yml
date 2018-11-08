@@ -17,10 +17,10 @@
 
 - when: inventory_hostname == groups['webserver'][0]
   block:
-  - name: Debug_toolbar_settings_file | {{ role_name | basename }}
-    tags: Debug_toolbar_settings_file
+  - name: Settings_for_debug_toolbar | {{ role_name | basename }}
+    tags: Settings_for_debug_toolbar
     blockinfile:
-      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings.py"
+      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings/{{ deployment_env }}.py"
       block: |
         DEBUG_TOOLBAR = True
         if DEBUG and DEBUG_TOOLBAR:

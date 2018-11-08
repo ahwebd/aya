@@ -7,18 +7,31 @@
       src: "{{ project_dir }}/{{ project }}/settings.py"
     register: original_settings
 
-  - name: Create_general_settings_file | {{ role_name | basename }}
-    tags: Create_general_settings_file
+  - name: Create_settings_directory | {{ role_name | basename }}
+    tags: Create_settings_directory
+    file:
+      path: "{{ project_dir }}/{{ project }}/settings"
+      state: directory
+
+  - name: Create_init_file | {{ role_name | basename }}
+    tags: Create_init_file
+    copy:
+      content: ""
+      dest: "{{ project_dir }}/{{ project }}/settings/__init__.py"
+      force: false
+
+  - name: Create_base_settings_file | {{ role_name | basename }}
+    tags: Create_base_settings_file
     copy:
       src: "{{ project_dir }}/{{ project }}/settings.py"
-      dest: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+      dest: "{{ project_dir }}/{{ project }}/settings/base.py"
       remote_src: yes
       force: false
 
-  - name: Remove_sensitive_and_env_related_info_from_general_settings_file | {{ role_name | basename }}
-    tags: Remove_sensitive_and_env_related_info_from_general_settings_file
+  - name: Remove_sensitive_and_env_related_info_from_base_settings_file | {{ role_name | basename }}
+    tags: Remove_sensitive_and_env_related_info_from_base_settings_file
     lineinfile:
-      path: "{{ project_dir }}/{{ project }}/settingsgeneral.py"
+      path: "{{ project_dir }}/{{ project }}/settings/base.py"
       regexp: "^\\s*{{ item }}"
       state: absent
     with_items:
@@ -30,8 +43,18 @@
   - name: Create_environment_specific_settings_file | {{ role_name | basename }}
     tags: Create_environment_specific_settings_file
     template:
-      src: "templates/settings{{ deployment_env }}.py.j2"
-      dest: "{{ project_dir }}/{{ project }}/settings.py"
+      src: "templates/{{ deployment_env }}.py.j2"
+      dest: "{{ project_dir }}/{{ project }}/settings/{{ deployment_env }}.py"
+
+  - name: Set_django_settings_module | {{ role_name | basename }}
+    tags: Set_django_settings_module
+    replace:
+      path: "{{ project_dir }}/{{ item }}"
+      regexp: '^(\s*)os.environ.setdefault\("DJANGO_SETTINGS_MODULE", "{{ project }}.settings"\)$'
+      replace: '\1os.environ.setdefault("DJANGO_SETTINGS_MODULE", "{{ project }}.settings.{{ deployment_env }}")'
+    loop:
+      - manage.py
+      - {{ project }}/wsgi.py
 
 - name: Create_docker_secret_for_project_secret_key | {{ role_name | basename }}
   tags: Create_docker_secret_for_project_secret_key
