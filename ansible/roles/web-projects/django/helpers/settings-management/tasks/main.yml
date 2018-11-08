@@ -28,6 +28,12 @@
       remote_src: yes
       force: false
 
+  - name: Delete_initial_settings_file | {{ role_name | basename }}
+    tags: Delete_initial_settings_file
+    file:
+      path: "{{ project_dir }}/{{ project }}/settings.py"
+      state: absent
+
   - name: Remove_sensitive_and_env_related_info_from_base_settings_file | {{ role_name | basename }}
     tags: Remove_sensitive_and_env_related_info_from_base_settings_file
     lineinfile:
@@ -40,6 +46,16 @@
       - "'USER': '{{ db_user }}'"
       - "'PASSWORD': '{{ hostvars[ db_node ]['db_user_password']['stdout'] }}'"
 
+  - name: Project_settings_paths_adjustment | {{ role_name | basename }}
+    tags: Project_settings_paths_adjustment
+    replace:
+      path: "{{ project_dir }}/{{ project }}/settings/base.py"
+      regexp: "{{ item | regex_escape() }}"
+      replace: "os.path.dirname({{ item }})"
+    loop:
+      - 'os.path.abspath(__file__)'
+      - 'os.path.dirname(__file__)'
+
   - name: Create_environment_specific_settings_file | {{ role_name | basename }}
     tags: Create_environment_specific_settings_file
     template:
@@ -50,11 +66,11 @@
     tags: Set_django_settings_module
     replace:
       path: "{{ project_dir }}/{{ item }}"
-      regexp: '^(\s*)os.environ.setdefault\("DJANGO_SETTINGS_MODULE", "{{ project }}.settings"\)$'
-      replace: '\1os.environ.setdefault("DJANGO_SETTINGS_MODULE", "{{ project }}.settings.{{ deployment_env }}")'
+      regexp: "^(\\s*)os.environ.setdefault(.+)DJANGO_SETTINGS_MODULE(.+){{ project }}.settings([\"']\\))$"
+      replace: '\1os.environ.setdefault\2DJANGO_SETTINGS_MODULE\3{{ project }}.settings.{{ deployment_env }}\4'
     loop:
       - manage.py
-      - {{ project }}/wsgi.py
+      - "{{ project }}/wsgi.py"
 
 - name: Create_docker_secret_for_project_secret_key | {{ role_name | basename }}
   tags: Create_docker_secret_for_project_secret_key
