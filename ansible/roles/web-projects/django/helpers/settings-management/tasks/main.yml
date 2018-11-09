@@ -66,7 +66,7 @@
     tags: Set_django_settings_module
     replace:
       path: "{{ project_dir }}/{{ item }}"
-      regexp: "^(\\s*)os.environ.setdefault(.+)DJANGO_SETTINGS_MODULE(.+){{ project }}.settings([\"']\\))$"
+      regexp: "^(\\s*)os\\.environ\\.setdefault(.+)DJANGO_SETTINGS_MODULE(.+){{ project }}\\.settings([\"']\\))$"
       replace: '\1os.environ.setdefault\2DJANGO_SETTINGS_MODULE\3{{ project }}.settings.{{ deployment_env }}\4'
     loop:
       - manage.py

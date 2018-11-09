@@ -1,0 +1,19 @@
+---
+#ansible-playbook -i inventories/localhost.ini playbooks/3-web-projects/django/add-wagtail-project.yml --ask-become-pass
+#ansible-playbook -i inventories/sandbox.ini playbooks/3-web-projects/django/add-wagtail-project.yml --ask-become-pass
+
+# Note: when asked for sudo password provide the local machine password, as it
+# used to have write access to local machine /etc/hosts file.
+
+- name: Add_wagtail_project
+  hosts: all
+  tasks:
+  - include_vars: add-wagtail-project-variables.yml
+
+  - include_role:
+      name: ../../../../roles/helpers/common-handlers
+
+  - tags: Add_wagtail_project
+    # Not idempotent
+    include_role:
+      name: ../../../../roles/web-projects/django/add-wagtail-project
