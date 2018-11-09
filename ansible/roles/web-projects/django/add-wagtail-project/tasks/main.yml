@@ -1,0 +1,151 @@
+---
+- tags: Add_site_entry_to_local_machine_hosts_file
+  run_once: true
+  include_role:
+    name: "{{ role_path }}/../../../helpers/add-project-entry-to-hosts-file"
+
+- tags: Setup_project_database
+  include_role:
+    name: "{{ role_path }}/../../../helpers/setup-project-database"
+
+- name: Create_docker_secret_for_project_db_user_password | {{ role_name | basename }}
+  tags: Create_docker_secret_for_project_db_user_password
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  docker_secret:
+    name: "{{ deployment_env }}_{{ project }}_db_user_password"
+    data: "{{ hostvars[ db_node ]['db_user_password']['stdout'] }}"
+
+- name: Create_project_virtual_environment | {{ role_name | basename }}
+  tags: Create_project_virtual_environment
+  when: inventory_hostname in groups['webserver']
+  include_role:
+    name: "{{ role_path }}/../../../helpers/create-venv"
+  vars:
+    venv_name: "{{ deployment_env }}_{{ project }}"
+    venv_packages: "psycopg2-binary wagtail=={{ wagtail_version }} {{ extra_python_packages }}"
+
+- tags: apps_directory_operations
+  when: inventory_hostname == groups['webserver'][0]
+  block:
+  - name: Create_project_directory | {{ role_name | basename }}
+    tags: Create_project_directory
+    file:
+      path: "{{ project_dir }}"
+      state: directory
+
+  - name: Install_wagtail_project | {{ role_name | basename }}
+    tags: Install_wagtail_project
+    docker_container:
+      name: install_wagtail_project
+      detach: false
+      cleanup: true
+      image: "{{ docker_images['uwsgi'] }}"
+      pull: true
+      user: "{{ ansible_user_uid }}:{{ ansible_user_gid }}"
+      volumes:
+        - "{{ python_venvs_dir }}:{{ python_venvs_dir }}"
+        - "{{ apps_dir }}:{{ apps_dir }}"
+      command: bash -c "
+        source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
+        wagtail start {{ project }} {{ project_dir }}"
+    notify:
+      - Django_migrate | common-handlers
+      - Django_collect_static_files | common-handlers
+
+  - name: Project_settings | {{ role_name | basename }}
+    tags: Project_settings
+    blockinfile:
+      path: "{{ project_dir }}/{{ project }}/settings/base.py"
+      block: |
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.postgresql',
+                'HOST': '{{ clients_db_host }}',
+                'PORT': '5432',
+            }
+        }
+      marker: "# {mark} PROJECT SETTINGS ADDED BY ANSIBLE ROLE {{ role_name | basename }}"
+
+  - name: Read_dev_settings_file | {{ role_name | basename }}
+    tags: Read_dev_settings_file
+    slurp:
+      src: "{{ project_dir }}/{{ project }}/settings/dev.py"
+    register: original_dev_settings
+
+  - name: Delete_initial_dev_settings_file | {{ role_name | basename }}
+    tags: Delete_initial_dev_settings_file
+    file:
+      path: "{{ project_dir }}/{{ project }}/settings/dev.py"
+      state: absent
+
+  - name: Create_environment_specific_settings_file | {{ role_name | basename }}
+    tags: Create_environment_specific_settings_file
+    template:
+      src: "../../helpers/settings-management/templates/{{ deployment_env }}.py.j2"
+      dest: "{{ project_dir }}/{{ project }}/settings/{{ deployment_env }}.py"
+
+  - name: Set_django_settings_module | {{ role_name | basename }}
+    tags: Set_django_settings_module
+    replace:
+      path: "{{ project_dir }}/{{ item }}"
+      regexp: "^(\\s*)os\\.environ\\.setdefault(.+)DJANGO_SETTINGS_MODULE(.+){{ project }}\\.settings\\.dev([\"']\\))$"
+      replace: '\1os.environ.setdefault\2DJANGO_SETTINGS_MODULE\3{{ project }}.settings.{{ deployment_env }}\4'
+    loop:
+      - manage.py
+      - "{{ project }}/wsgi.py"
+
+  - name: Create_uwsgi_vassal_file | {{ role_name | basename }}
+    tags: Create_uwsgi_vassal_file
+    include_role:
+      name: "{{ role_path }}/../helpers/create-uwsgi-vassal-file"
+
+  - name: Create_nginx_config_file | {{ role_name | basename }}
+    tags: Create_nginx_config_file
+    include_role:
+      name: "{{ role_path }}/../helpers/create-nginx-config-file"
+
+- name: Create_docker_secret_for_project_secret_key | {{ role_name | basename }}
+  tags: Create_docker_secret_for_project_secret_key
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  docker_secret:
+    name: "{{ deployment_env }}_{{ project }}_secret_key"
+    data: "{{ hostvars[groups['webserver'][0]]['original_dev_settings']['content'] | b64decode
+          | regex_search(\"SECRET_KEY = '.+'\")
+          | regex_replace(\"SECRET_KEY = \")
+          | regex_replace(\"'\") }}"
+  ignore_errors: true
+
+- name: update_uwsgi_docker_service_with_project_secrets | {{ role_name | basename }}
+  tags: update_uwsgi_docker_service_with_project_secrets
+  when: inventory_hostname == groups['docker-swarm-manager'][0]
+  command: "docker service update
+          --secret-add source={{ deployment_env }}_{{ project }}_db_user_password,target={{ deployment_env }}_{{ project }}_db_user_password,uid={{ ansible_user_uid }},mode=0400
+          --secret-add source={{ deployment_env }}_{{ project }}_secret_key,target={{ deployment_env }}_{{ project }}_secret_key,uid={{ ansible_user_uid }},mode=0400
+          web-stack_uwsgi"
+
+- meta: flush_handlers
+
+- when: inventory_hostname == groups['webserver'][0]
+  block:
+  - name: Change_db_host_from_pgpool_to_pgmaster_in_settings | {{ role_name | basename }}
+    tags: Change_db_host_from_pgpool_to_pgmaster_in_settings
+    replace:
+      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings/base.py"
+      regexp: 'pgstack_pgpool'
+      replace: 'pgstack_pgmaster'
+
+  - name: Django_create_superuser | {{ role_name | basename }}
+    tags: Django_create_superuser
+    shell: >
+      docker exec
+      $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
+        source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
+        echo \"from django.contrib.auth.models import User; User.objects.create_superuser('{{ admin_username }}', '{{ admin_email }}', '{{ admin_password }}')\" |
+        python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py shell"
+
+  - name: Change_db_host_from_pgmaster_to_pgpool_in_settings | {{ role_name | basename }}
+    tags: Change_db_host_from_pgmaster_to_pgpool_in_settings
+    replace:
+      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings/base.py"
+      regexp: 'pgstack_pgmaster'
+      replace: 'pgstack_pgpool'

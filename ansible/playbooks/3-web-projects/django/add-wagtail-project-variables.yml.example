@@ -1,0 +1,28 @@
+---
+# Project name
+project: wagtailexample
+# Deployment environment (prod, dev, staging/stg, test, play ...)
+deployment_env: play
+
+# Create project database in postgres-cluster?
+database_in_postgres_cluster: false
+
+# Keep empty for non production projects
+domain: ""
+
+# An entry "project_access_ip deployment_env.project" will be added to
+# local machine /etc/hosts, this will allow you to access your project using
+# http://deployment_env.project
+# You can put the ip of any machine participating in the docker swarm
+project_access_ip: "127.0.0.1"
+project_access_ip6: ""
+
+wagtail_version: "2.3"
+
+# extra python packages to install in project virtualenv
+extra_python_packages: ""
+
+# superuser credentials
+admin_username: "admin"
+admin_email: "admin@example.com"
+admin_password: "admin"
