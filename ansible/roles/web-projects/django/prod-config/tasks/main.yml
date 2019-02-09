@@ -9,6 +9,12 @@
     notify: Restart_nginx | common-handlers
   - meta: flush_handlers
 
+  - name: Create_letsencrypt_directory_if_not_existing | {{ role_name | basename }}
+    tags: Create_letsencrypt_directory_if_not_existing
+    file:
+      path: "{{ apps_dir }}/etc/letsencrypt"
+      state: directory
+
   - name: Generate_letsencrypt_certificate | {{ role_name | basename }}
     tags: Generate_letsencrypt_certificate
     docker_container:
