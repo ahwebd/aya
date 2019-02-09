@@ -57,5 +57,11 @@
     cron:
       name: tls_certificates_renewal_cron_job
       special_time: weekly
-      job: "docker run --rm -v {{ apps_dir }}/etc/letsencrypt:/etc/letsencrypt
-        -v {{ apps_dir }}:{{ apps_dir }} certbot/certbot renew --quiet > /dev/null"
+      job: "(date; docker run --rm -v {{ apps_dir }}/etc/letsencrypt:/etc/letsencrypt
+        -v {{ apps_dir }}:{{ apps_dir }} certbot/certbot renew
+        --deploy-hook 'touch /apps/nginx_to_be_restarted_due_cert_renewal';
+        if [ -f '/apps/nginx_to_be_restarted_due_cert_renewal' ]; then
+          docker service update --force --quiet web-stack_nginx;
+          rm '/apps/nginx_to_be_restarted_due_cert_renewal';
+        fi)
+        >> {{ ansible_user_dir }}/.aya/tls_certificates_renewal_cron_job.log 2>&1"
