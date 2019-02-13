@@ -15,6 +15,18 @@
         path: "{{ apps_dir }}/etc/nginx/conf.d/{{ deployment_env }}_{{ project }}.conf"
         state: absent
 
+    - name: Remove_nginx_http_config_file | {{ role_name | basename }}
+      tags: Remove_nginx_http_config_file
+      file:
+        path: "{{ apps_dir }}/etc/nginx/conf.d/nginx_http_{{ domain }}.conf"
+        state: absent
+
+    - name: Remove_nginx_https_config_file | {{ role_name | basename }}
+      tags: Remove_nginx_https_config_file
+      file:
+        path: "{{ apps_dir }}/etc/nginx/conf.d/nginx_https_{{ domain }}.conf"
+        state: absent
+
     - name: Remove_db_user_password_file | {{ role_name | basename }}
       tags: Remove_db_user_password_file
       file:
