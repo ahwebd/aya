@@ -33,12 +33,12 @@
         pip freeze --cache-dir {{ python_venvs_dir }}/pipcache > {{ project_dir }}/venv_requirements.txt &&
         python {{ project_dir }}/manage.py collectstatic --noinput -v 0"
 
-  - name: Change_db_host_from_pgmaster_to_pgpool_in_settings_file | {{ role_name | basename }}
-    tags: Change_db_host_from_pgmaster_to_pgpool_in_settings_file
+  - name: Change_db_host_from_pgmaster_to_clients_db_host_in_settings_file | {{ role_name | basename }}
+    tags: Change_db_host_from_pgmaster_to_clients_db_host_in_settings_file
     replace:
       path: "{{ project_dir }}/{{ project }}/settings.py"
       regexp: 'pgstack_pgmaster'
-      replace: 'pgstack_pgpool'
+      replace: "{{ clients_db_host }}"
 
   - name: Project_settings | {{ role_name | basename }}
     tags: Project_settings

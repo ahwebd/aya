@@ -142,9 +142,9 @@
         echo \"from django.contrib.auth.models import User; User.objects.create_superuser('{{ admin_username }}', '{{ admin_email }}', '{{ admin_password }}')\" |
         python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py shell"
 
-  - name: Change_db_host_from_pgmaster_to_pgpool_in_settings | {{ role_name | basename }}
-    tags: Change_db_host_from_pgmaster_to_pgpool_in_settings
+  - name: Change_db_host_from_pgmaster_to_clients_db_host_in_settings_file | {{ role_name | basename }}
+    tags: Change_db_host_from_pgmaster_to_clients_db_host_in_settings_file
     replace:
       path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings/base.py"
       regexp: 'pgstack_pgmaster'
-      replace: 'pgstack_pgpool'
+      replace: "{{ clients_db_host }}"

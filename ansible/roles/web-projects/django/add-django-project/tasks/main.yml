@@ -96,12 +96,27 @@
 
 - meta: flush_handlers
 
-- name: Django_create_superuser | {{ role_name | basename }}
-  tags: Django_create_superuser
-  when: inventory_hostname == groups['webserver'][0]
-  shell: >
-    docker exec
-    $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
-      source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
-      echo \"from django.contrib.auth.models import User; User.objects.create_superuser('{{ admin_username }}', '{{ admin_email }}', '{{ admin_password }}')\" |
-      python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py shell"
+- when: inventory_hostname == groups['webserver'][0]
+  block:
+  - name: Change_db_host_from_pgpool_to_pgmaster_in_settings | {{ role_name | basename }}
+    tags: Change_db_host_from_pgpool_to_pgmaster_in_settings
+    replace:
+      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings/base.py"
+      regexp: 'pgstack_pgpool'
+      replace: 'pgstack_pgmaster'
+
+  - name: Django_create_superuser | {{ role_name | basename }}
+    tags: Django_create_superuser
+    shell: >
+      docker exec
+      $(docker ps -f name=^/web-stack_uwsgi. -q | sed -n 1p) bash -c "
+        source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
+        echo \"from django.contrib.auth.models import User; User.objects.create_superuser('{{ admin_username }}', '{{ admin_email }}', '{{ admin_password }}')\" |
+        python {{ apps_dir }}/{{ deployment_env }}/{{ project }}/manage.py shell"
+
+  - name: Change_db_host_from_pgmaster_to_clients_db_host_in_settings_file | {{ role_name | basename }}
+    tags: Change_db_host_from_pgmaster_to_clients_db_host_in_settings_file
+    replace:
+      path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings/base.py"
+      regexp: 'pgstack_pgmaster'
+      replace: "{{ clients_db_host }}"
