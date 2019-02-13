@@ -29,6 +29,8 @@
       command: >
         certonly --webroot -m {{ tls_email }} --agree-tos
         -w {{ project_dir }} -d {{ domain }} -d www.{{ domain }}
+    register: cert_renewal_output
+    failed_when: cert_renewal_output.failed and 'not yet due for renewal' not in cert_renewal_output.msg
 
   - name: Generate_Diffie_Hellman_group_if_not_existing | {{ role_name | basename }}
     tags: Generate_Diffie_Hellman_group_if_not_existing
