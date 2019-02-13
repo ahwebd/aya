@@ -1,3 +1,8 @@
 ---
 project: djangoexample
 deployment_env: play
+
+# Keep empty for non production projects
+domain: ""
+
+database_in_postgres_cluster: true
