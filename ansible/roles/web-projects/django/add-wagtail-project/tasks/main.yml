@@ -8,13 +8,6 @@
   include_role:
     name: "{{ role_path }}/../../../helpers/setup-project-database"
 
-- name: Create_docker_secret_for_project_db_user_password | {{ role_name | basename }}
-  tags: Create_docker_secret_for_project_db_user_password
-  when: inventory_hostname == groups['docker-swarm-manager'][0]
-  docker_secret:
-    name: "{{ deployment_env }}_{{ project }}_db_user_password"
-    data: "{{ hostvars[ db_node ]['db_user_password']['stdout'] }}"
-
 - name: Create_project_virtual_environment | {{ role_name | basename }}
   tags: Create_project_virtual_environment
   when: inventory_hostname in groups['webserver']
@@ -70,7 +63,7 @@
     tags: Read_dev_settings_file
     slurp:
       src: "{{ project_dir }}/{{ project }}/settings/dev.py"
-    register: original_dev_settings
+    register: original_settings
 
   - name: Delete_initial_dev_settings_file | {{ role_name | basename }}
     tags: Delete_initial_dev_settings_file
@@ -84,12 +77,18 @@
       src: "../../helpers/settings-management/templates/{{ deployment_env }}.py.j2"
       dest: "{{ project_dir }}/{{ project }}/settings/{{ deployment_env }}.py"
 
+  - name: Create_local_settings_file | {{ role_name | basename }}
+    tags: Create_local_settings_file
+    template:
+      src: "../../helpers/settings-management/templates/local.py.j2"
+      dest: "{{ project_dir }}/{{ project }}/settings/local.py"
+
   - name: Set_django_settings_module | {{ role_name | basename }}
     tags: Set_django_settings_module
     replace:
       path: "{{ project_dir }}/{{ item }}"
       regexp: "^(\\s*)os\\.environ\\.setdefault(.+)DJANGO_SETTINGS_MODULE(.+){{ project }}\\.settings\\.dev([\"']\\))$"
-      replace: '\1os.environ.setdefault\2DJANGO_SETTINGS_MODULE\3{{ project }}.settings.{{ deployment_env }}\4'
+      replace: '\1os.environ.setdefault\2DJANGO_SETTINGS_MODULE\3{{ project }}.settings.local\4'
     loop:
       - manage.py
       - "{{ project }}/wsgi.py"
@@ -104,24 +103,24 @@
     include_role:
       name: "{{ role_path }}/../helpers/create-nginx-config-file"
 
-- name: Create_docker_secret_for_project_secret_key | {{ role_name | basename }}
-  tags: Create_docker_secret_for_project_secret_key
-  when: inventory_hostname == groups['docker-swarm-manager'][0]
-  docker_secret:
-    name: "{{ deployment_env }}_{{ project }}_secret_key"
-    data: "{{ hostvars[groups['webserver'][0]]['original_dev_settings']['content'] | b64decode
-          | regex_search(\"SECRET_KEY = '.+'\")
-          | regex_replace(\"SECRET_KEY = \")
-          | regex_replace(\"'\") }}"
-  ignore_errors: true
+  - name: Create_secret_file_for_project_db_user_password | {{ role_name | basename }}
+    tags: Create_secret_file_for_project_db_user_password
+    copy:
+      dest: "/apps/etc/secrets/{{ deployment_env }}_{{ project }}_db_user_password"
+      content: "{{ hostvars[ db_node ]['db_user_password']['stdout'] }}"
+      owner: "{{ ansible_user_uid }}"
+      mode: 0600
 
-- name: update_uwsgi_docker_service_with_project_secrets | {{ role_name | basename }}
-  tags: update_uwsgi_docker_service_with_project_secrets
-  when: inventory_hostname == groups['docker-swarm-manager'][0]
-  command: "docker service update
-          --secret-add source={{ deployment_env }}_{{ project }}_db_user_password,target={{ deployment_env }}_{{ project }}_db_user_password,uid={{ ansible_user_uid }},mode=0400
-          --secret-add source={{ deployment_env }}_{{ project }}_secret_key,target={{ deployment_env }}_{{ project }}_secret_key,uid={{ ansible_user_uid }},mode=0400
-          web-stack_uwsgi"
+  - name: Create_secret_file_for_project_secret_key | {{ role_name | basename }}
+    tags: Create_secret_file_for_project_secret_key
+    copy:
+      dest: "/apps/etc/secrets/{{ deployment_env }}_{{ project }}_secret_key"
+      content: "{{ hostvars[groups['webserver'][0]]['original_settings']['content'] | b64decode
+            | regex_search(\"SECRET_KEY = '.+'\")
+            | regex_replace(\"SECRET_KEY = \")
+            | regex_replace(\"'\") }}"
+      owner: "{{ ansible_user_uid }}"
+      mode: 0600
 
 - meta: flush_handlers
 

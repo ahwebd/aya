@@ -15,6 +15,18 @@
         path: "{{ apps_dir }}/etc/nginx/conf.d/{{ deployment_env }}_{{ project }}.conf"
         state: absent
 
+    - name: Remove_db_user_password_file | {{ role_name | basename }}
+      tags: Remove_db_user_password_file
+      file:
+        path: "/apps/etc/secrets/{{ deployment_env }}_{{ project }}_db_user_password"
+        state: absent
+
+    - name: Remove_secret_key_file | {{ role_name | basename }}
+      tags: Remove_secret_key_file
+      file:
+        path: "/apps/etc/secrets/{{ deployment_env }}_{{ project }}_secret_key"
+        state: absent
+
     - name: Remove_project_directory | {{ role_name | basename }}
       tags: Remove_project_directory
       file:
@@ -73,18 +85,3 @@
       path: /etc/hosts
       regexp: "{{ deployment_env }}.{{ project }}$"
       state: absent
-
-  - name: Remove_project_secrets_from_uwsgi_docker_service | {{ role_name | basename }}
-    tags: Remove_project_secrets_from_uwsgi_docker_service
-    when: inventory_hostname == groups['docker-swarm-manager'][0]
-    command: "docker service update
-            --secret-rm {{ deployment_env }}_{{ project }}_db_user_password
-            --secret-rm {{ deployment_env }}_{{ project }}_secret_key
-            web-stack_uwsgi"
-
-  - name: Remove_project_secrets_from_swarm | {{ role_name | basename }}
-    tags: Remove_project_secrets_from_swarm
-    when: inventory_hostname == groups['docker-swarm-manager'][0]
-    command: "docker secret rm
-            {{ deployment_env }}_{{ project }}_db_user_password
-            {{ deployment_env }}_{{ project }}_secret_key"

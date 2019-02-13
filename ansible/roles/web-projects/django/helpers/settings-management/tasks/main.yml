@@ -62,23 +62,18 @@
       src: "templates/{{ deployment_env }}.py.j2"
       dest: "{{ project_dir }}/{{ project }}/settings/{{ deployment_env }}.py"
 
+  - name: Create_local_settings_file | {{ role_name | basename }}
+    tags: Create_local_settings_file
+    template:
+      src: "templates/local.py.j2"
+      dest: "{{ project_dir }}/{{ project }}/settings/local.py"
+
   - name: Set_django_settings_module | {{ role_name | basename }}
     tags: Set_django_settings_module
     replace:
       path: "{{ project_dir }}/{{ item }}"
       regexp: "^(\\s*)os\\.environ\\.setdefault(.+)DJANGO_SETTINGS_MODULE(.+){{ project }}\\.settings([\"']\\))$"
-      replace: '\1os.environ.setdefault\2DJANGO_SETTINGS_MODULE\3{{ project }}.settings.{{ deployment_env }}\4'
+      replace: '\1os.environ.setdefault\2DJANGO_SETTINGS_MODULE\3{{ project }}.settings.local\4'
     loop:
       - manage.py
       - "{{ project }}/wsgi.py"
-
-- name: Create_docker_secret_for_project_secret_key | {{ role_name | basename }}
-  tags: Create_docker_secret_for_project_secret_key
-  when: inventory_hostname == groups['docker-swarm-manager'][0]
-  docker_secret:
-    name: "{{ deployment_env }}_{{ project }}_secret_key"
-    data: "{{ hostvars[groups['webserver'][0]]['original_settings']['content'] | b64decode
-          | regex_search(\"SECRET_KEY = '.+'\")
-          | regex_replace(\"SECRET_KEY = \")
-          | regex_replace(\"'\") }}"
-  ignore_errors: true

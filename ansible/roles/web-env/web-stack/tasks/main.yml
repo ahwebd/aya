@@ -32,6 +32,14 @@
         path: "{{ apps_dir }}/etc/uwsgi/vassals"
         state: directory
 
+    - name: Create_secrets_directory | {{ role_name | basename }}
+      tags: Create_secrets_directory
+      file:
+        path: "{{ apps_dir }}/etc/secrets"
+        state: directory
+        owner: "{{ ansible_user_uid }}"
+        mode: 0700
+
     - name: Copy_uwsgi_params_file | {{ role_name | basename }}
       tags: Copy_uwsgi_params_file
       copy:

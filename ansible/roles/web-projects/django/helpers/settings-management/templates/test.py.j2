@@ -2,22 +2,15 @@
 from .base import *
 
 # {{ deployment_env }} environment specific settings:
-with open('/run/secrets/{{ deployment_env }}_{{ project }}_secret_key') as f:
+with open('/apps/etc/secrets/{{ deployment_env }}_{{ project }}_secret_key') as f:
   SECRET_KEY = f.read().strip()
-with open('/run/secrets/{{ deployment_env }}_{{ project }}_db_user_password') as f:
+with open('/apps/etc/secrets/{{ deployment_env }}_{{ project }}_db_user_password') as f:
   DATABASES['default']['PASSWORD'] = f.read().strip()
 
 DATABASES['default']['NAME'] = '{{ db }}'
 DATABASES['default']['USER'] = '{{ db_user }}'
 
-ALLOWED_HOSTS = ['{{ deployment_env }}.{{ project }}']
+DEBUG = True
+ALLOWED_HOSTS = ['*']
 
 # More settings overrides for {{ deployment_env }} environment:
-
-
-# Settings that should never go into version control should be put in "local.py"
-# ex: passwords, secret keys...
-try:
-    from .local import *
-except ImportError:
-    pass

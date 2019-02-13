@@ -18,7 +18,7 @@
 
 - name: Change_db_host_from_pgmaster_to_pgpool_in_settings | {{ role_name | basename }}
   tags: Change_db_host_from_pgmaster_to_pgpool_in_settings
-  when: python_manage_command in ['migrate',]
+  when: python_manage_command in ['migrate',] and database_in_postgres_cluster and deployment_env == 'prod'
   replace:
     path: "{{ apps_dir }}/{{ deployment_env }}/{{ project }}/{{ project }}/settings/base.py"
     regexp: 'pgstack_pgmaster'

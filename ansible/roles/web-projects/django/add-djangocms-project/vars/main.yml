@@ -18,9 +18,12 @@ db_docker_service:  "{{
   else 'web-stack_postgres'
   }}"
 
+# Be minded that using pgpool while still building the project might cause issues
+# due to cached database connections. If that happens restart pgpool using command:
+# docker service update pgstack_pgpool --force
 clients_db_host:  "{{
-  'pgstack_pgpool' if database_in_postgres_cluster
-  else 'web-stack_postgres'
+  'pgstack_pgpool' if database_in_postgres_cluster and deployment_env == 'prod'
+  else db_docker_service
   }}"
 
 djangocms_install_command: "djangocms
