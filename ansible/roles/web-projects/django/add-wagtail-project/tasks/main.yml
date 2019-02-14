@@ -42,6 +42,7 @@
         source {{ python_venvs_dir }}/{{ deployment_env }}_{{ project }}/bin/activate &&
         wagtail start {{ project }} {{ project_dir }}"
     notify:
+      - Restart_uwsgi | common-handlers
       - Django_migrate | common-handlers
       - Django_collect_static_files | common-handlers
 

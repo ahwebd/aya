@@ -73,6 +73,9 @@
             | regex_replace(\"'\") }}"
       owner: "{{ ansible_user_uid }}"
       mode: 0600
+    notify:
+      - Restart_uwsgi | common-handlers
+
 
 - name: Synchronize_project_virtual_environment | {{ role_name | basename }}
   tags: Synchronize_project_virtual_environment
