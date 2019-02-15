@@ -118,3 +118,15 @@
       name: glusterd
       enabled: true
       daemon_reload: true
+
+- tags: Install_misc_tools
+  become: true
+  block:
+  - name: Install_misc_tools_in_webserver_machines | {{ role_name | basename }}
+    tags: Install_misc_tools_in_webserver_machines
+    when: inventory_hostname in groups['webserver']
+    apt:
+      name: "{{ packages }}"
+    vars:
+      packages:
+      - gettext
