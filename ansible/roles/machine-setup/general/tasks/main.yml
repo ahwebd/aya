@@ -130,3 +130,9 @@
     vars:
       packages:
       - gettext
+
+- name: Enable_command_history_using_up_and_down_keys | {{ role_name | basename }}
+  tags: Enable_command_history_using_up_and_down_keys
+  copy:
+    dest: "{{ ansible_user_dir }}/.inputrc"
+    content: "## arrow up\n\"\\e[A\":history-search-backward\n## arrow down\n\"\\e[B\":history-search-forward\n"
