@@ -15,6 +15,7 @@
   - include_vars: web-env-variables.yml
 
   - tags: Setup_apps_directory
+    when: inventory_hostname in groups['webserver']
     include_role:
       name: ../../roles/web-env/apps-dir
 

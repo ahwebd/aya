@@ -1,7 +1,6 @@
 ---
 - name: Create_apps_directory | {{ role_name | basename }}
   tags: Create_apps_directory
-  when: inventory_hostname in groups['webserver']
   become: true
   file:
     path: "{{ apps_dir }}"
