@@ -15,3 +15,10 @@
   tasks:
   - include_role:
       name: ../../roles/machine-setup/general
+
+- name: Setup_docker_swarm
+  tags: Setup_docker_swarm
+  hosts: all
+  tasks:
+  - include_role:
+      name: ../../roles/machine-setup/docker-swarm

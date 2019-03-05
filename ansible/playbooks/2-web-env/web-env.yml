@@ -18,10 +18,6 @@
     include_role:
       name: ../../roles/web-env/apps-dir
 
-  - tags: Setup_docker_swarm
-    include_role:
-      name: ../../roles/web-env/docker-swarm
-
   - tags: Setup_web_stack
     include_role:
       name: ../../roles/web-env/web-stack
