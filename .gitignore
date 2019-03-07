@@ -1,5 +1,7 @@
 *.retry
 *.log
+*.tags*
+
 .vagrant
 *-variables.yml
 
